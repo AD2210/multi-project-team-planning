@@ -1,0 +1,12 @@
+{
+  "controllers": {
+    "@ad2210/multi-project-team-planning/planner_controller": {
+      "enabled": true,
+      "fetch": "eager"
+    },
+    "@ad2210/multi-project-team-planning/planner_anchor_controller": {
+      "enabled": true,
+      "fetch": "eager"
+    }
+  }
+}

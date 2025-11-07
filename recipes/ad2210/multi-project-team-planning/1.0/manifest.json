@@ -1,0 +1,17 @@
+{
+  "manifest": {
+    "copy-from-recipe": {
+      "config/packages/ad2210_planning.yaml": "config/packages/ad2210_planning.yaml",
+      "config/routes/ad2210_planning.yaml": "config/routes/ad2210_planning.yaml",
+      "assets/controllers.json": "assets/controllers.json",
+      "templates/planning/demo.html.twig": "templates/planning/demo.html.twig"
+    },
+    "post-install-output": [
+      "⚙️  Ad2210 Multi Project Team Planning installé.",
+      "1) Vérifie config/packages/ad2210_planning.yaml (timezone, week_start, etc.).",
+      "2) Stimulus: controllers.json mis à jour. Rebuild front si tu utilises Encore.",
+      "3) Crée ton entité Slot: bin/console planning:make:entity App\\\\Entity\\\\Planning\\\\PlanningSlot --owner-class=App\\\\Entity\\\\User --project-class=App\\\\Entity\\\\WorkSite",
+      "4) Import routes: config/routes/ad2210_planning.yaml -> /planning/*"
+    ]
+  }
+}

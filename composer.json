@@ -14,7 +14,9 @@
         "symfony/stimulus-bundle": "^2.31",
         "symfony/asset": "^7.3",
         "symfony/form": "^7.3",
-        "symfony/routing": "^7.3"
+        "symfony/routing": "^7.3",
+        "symfony/uid": "^7.3",
+        "symfony/console": "^7.3"
     },
     "require-dev": {
         "phpunit/phpunit": "^12.4",

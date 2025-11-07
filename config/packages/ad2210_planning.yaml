@@ -1,0 +1,7 @@
+ad2210_planning:
+  timezone: 'Europe/Paris'
+  week_start: 'monday'
+  work_hours:
+    start: '07:00'
+    end: '19:00'
+  slot_min_duration: 'PT15M' # ISO 8601 duration
