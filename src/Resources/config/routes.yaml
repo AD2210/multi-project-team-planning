@@ -1,0 +1,9 @@
+multi_project_team_planning:
+  resource: ../../Controller/
+  type: attribute
+  prefix: /planning
+
+ad2210_mptp_demo:
+  resource: '@MultiProjectTeamPlanningBundle/Controller/'
+  type: attribute
+  prefix: /planning

@@ -1,8 +1,0 @@
-multi_project_team_planning:
-  resource: ../../Controller/
-  type: attribute
-  prefix: /planning
-
-ad2210_planning_demo:
-  path: /demo
-  controller: Ad2210\MultiProjectTeamPlanning\Controller\DemoController::index

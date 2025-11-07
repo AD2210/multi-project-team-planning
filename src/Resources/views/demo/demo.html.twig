@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="fr">
+<head>
+    <meta charset="utf-8">
+    <title>Planning – Démo</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+
+    {# FullCalendar v6 injecte son CSS automatiquement via le JS, pas besoin de <link> #}
+    <style>
+        body { font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, sans-serif; margin: 0; }
+        .toolbar { display:flex; gap:.5rem; align-items:center; padding:.75rem 1rem; border-bottom:1px solid #e5e7eb; position: sticky; top:0; background:#fff; z-index:10;}
+        .toolbar .right { margin-left:auto; display:flex; gap:.5rem; }
+        select, button, input[type="date"] { padding:.4rem .6rem; border:1px solid #d1d5db; border-radius:.5rem; background:#fff; cursor:pointer; }
+        #calendar { padding:12px; }
+        .legend { display:flex; gap:1rem; padding:.5rem 1rem; font-size:.9rem; color:#4b5563; }
+        .legend .chip { display:inline-flex; align-items:center; gap:.4rem; }
+        .chip i { width:10px; height:10px; display:inline-block; border-radius:2px; }
+    </style>
+</head>
+<body>
+
+{# >>>> MONTE planner SUR LE WRAPPER QUI ENGLOBE TOUT <<<< #}
+<div id="planner-root"
+     data-controller="planner"
+     data-planner-mode-value="{{ mode }}"
+     data-planner-events-value='{{ events|json_encode|e('html_attr') }}'
+     data-planner-users-value='{{ users|json_encode|e('html_attr') }}'
+     data-planner-projects-value='{{ projects|json_encode|e('html_attr') }}'>
+
+    <div class="toolbar">
+        <div class="left">
+            <button type="button" data-action="planner#prev">&larr;</button>
+            <button type="button" data-action="planner#today">Aujourd’hui</button>
+            <button type="button" data-action="planner#next">&rarr;</button>
+            <input type="date" data-action="change->planner#gotoByInput">
+        </div>
+
+        <div class="center">
+            <select data-action="change->planner#changeMode">
+                <option value="team" {{ mode == 'team' ? 'selected' }}>Équipe</option>
+                <option value="user" {{ mode == 'user' ? 'selected' }}>Utilisateur</option>
+                <option value="project" {{ mode == 'project' ? 'selected' }}>Projet</option>
+            </select>
+
+            <select data-action="change->planner#selectUser" {{ mode != 'user' ? 'disabled' }}>
+                <option value="">— Choisir un utilisateur —</option>
+                {% for u in users %}
+                    <option value="{{ u.id }}" {{ selectedUser is defined and selectedUser == u.id ? 'selected' }}>
+                        {{ u.name }}
+                    </option>
+                {% endfor %}
+            </select>
+
+            <select data-action="change->planner#selectProject" {{ mode != 'project' ? 'disabled' }}>
+                <option value="">— Choisir un chantier —</option>
+                {% for p in projects %}
+                    <option value="{{ p.id }}" {{ selectedProject is defined and selectedProject == p.id ? 'selected' }}>
+                        {{ p.name }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="right">
+            <button type="button" data-action="planner#viewMonth">Mois</button>
+            <button type="button" data-action="planner#viewWeek">Semaine</button>
+            <button type="button" data-action="planner#viewDay">Jour</button>
+        </div>
+    </div>
+
+    <div class="legend">
+        <div>• Légende :</div>
+        <div class="chip"><i style="background:#3b82f6"></i> Alice</div>
+        <div class="chip"><i style="background:#10b981"></i> Bob</div>
+        <div class="chip"><i style="background:#f59e0b"></i> Chloé</div>
+        <div class="chip"><i style="background:#e11d48; border:2px solid #e11d48"></i> Rénovation Toiture</div>
+        <div class="chip"><i style="background:#8b5cf6; border:2px solid #8b5cf6"></i> Extension Salon</div>
+    </div>
+
+    {# cible utilisée par le contrôleur planner #}
+    <div id="calendar" data-planner-target="calendar"></div>
+</div>
+
+{# FullCalendar JS (v6, bundle global) : injecte aussi son CSS automatiquement #}
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.19/index.global.min.js"></script>
+
+{# Stimulus runtime + enregistrement des controllers du bundle #}
+<script type="module">
+    import { Application } from "https://unpkg.com/@hotwired/stimulus/dist/stimulus.js";
+    import Planner from "/bundles/multiprojectteamplanning/controllers/planner_controller.js";
+    // (plus besoin de planner_anchor_controller pour la démo)
+
+    window.Stimulus = Application.start();
+    window.Stimulus.register("planner", Planner);
+</script>
+</body>
+</html>

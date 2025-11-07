@@ -1,0 +1,16 @@
+services:
+  _defaults:
+    autowire: true
+    autoconfigure: true
+    public: false
+
+  # Tous les services du bundle
+  Ad2210\MultiProjectTeamPlanning\:
+    resource: '../../*'
+    exclude: '../../{DependencyInjection,Resources,Tests}'
+
+  # Les controllers doivent être "controller.service_arguments" + publics
+  Ad2210\MultiProjectTeamPlanning\Controller\:
+    resource: '../../Controller/'
+    tags: ['controller.service_arguments']
+    public: true
