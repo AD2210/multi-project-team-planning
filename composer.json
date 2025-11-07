@@ -1,0 +1,37 @@
+{
+    "name": "ad2210/multi-project-team-planning",
+    "description": "manage planning for multi project with team, several views (global planning, teammate view, project view)",
+    "type": "composer-bundle",
+    "require": {
+        "symfony/http-kernel": "^7.3",
+        "symfony/dependency-injection": "^7.3",
+        "symfony/config": "^7.3",
+        "symfony/framework-bundle": "^7.3",
+        "twig/twig": "^3.22",
+        "symfony/twig-bundle": "^7.3",
+        "symfony/ux-twig-component": "^2.31",
+        "symfony/ux-live-component": "^2.31",
+        "symfony/stimulus-bundle": "^2.31",
+        "symfony/asset": "^7.3",
+        "symfony/form": "^7.3",
+        "symfony/routing": "^7.3"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^12.4",
+        "symfony/phpunit-bridge": "^7.3",
+        "symfony/var-dumper": "^7.3",
+        "symfony/stopwatch": "^7.3"
+    },
+    "license": "MIT",
+    "autoload": {
+        "psr-4": {
+            "Ad2210\\MultiProjectTeamPlanning\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "ad2210"
+        }
+    ],
+    "minimum-stability": "stable"
+}

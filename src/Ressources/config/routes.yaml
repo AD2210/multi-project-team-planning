@@ -1,0 +1,4 @@
+multi_project_team_planning:
+  resource: ../../Controller/
+  type: attribute
+  prefix: /planning

@@ -1,0 +1,9 @@
+services:
+  _defaults:
+    autowire: true
+    autoconfigure: true
+    public: false
+
+  Ad2210\MultiProjectTeamPlanning\:
+    resource: '../../*'
+    exclude: '../../{Resources,Tests}'
