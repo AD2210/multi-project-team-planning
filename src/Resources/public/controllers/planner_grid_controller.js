@@ -6,8 +6,10 @@ import { Controller } from "https://unpkg.com/@hotwired/stimulus/dist/stimulus.j
  * - drag sur un slot => déplacement
  * - drag sur poignées top/bottom => resize
  * - Alt+drag sur slot => duplication
+ * - select + delete => suppression
  *
  * Événements émis (à écouter côté app / Live):
+ * - planner:list    { start, end, mode, user_id, project_id, timezone }
  * - planner:create  { date, startMinute, endMinute }
  * - planner:update  { id, date, startMinute, endMinute }
  * - planner:duplicate { id, date, startMinute, endMinute }
