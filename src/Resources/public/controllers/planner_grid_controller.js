@@ -534,35 +534,43 @@ export default class extends Controller {
     }
     openDetail(e) {
         const slot = e.target.closest('.slot');
-        if (!slot) { this._clearSelection(); return; }
+        if (!slot) return;
 
+        // sélection visuelle
         this._select(slot);
 
-        // Datas pour le modal
-        const id = slot.dataset.id || '';
         const col = slot.closest('.mptp-col');
         const ymd = col?.dataset.date || '';
-        const startMin = parseInt(slot.dataset.startMinute || '0', 10);
-        const endMin   = parseInt(slot.dataset.endMinute   || '0', 10);
 
+        const startMin = parseInt(slot.dataset.startMinute ?? '0', 10);
+        const endMin   = parseInt(slot.dataset.endMinute   ?? '0', 10);
+
+        // ISO simples pour le modal
         const startIso = `${ymd}T${this._fmtMinute(startMin)}:00`;
         const endIso   = `${ymd}T${this._fmtMinute(endMin)}:00`;
 
-        // URL update pour ce slot renvoie null si pas d'id, on utilisera l'url create à la place
-        const upd = id ? this._urlWithId(this.updateUrlTemplateValue, id) : null;
+        const id = slot.dataset.id || '';
+        const updateUrl = id ? this._urlWithId(this.updateUrlTemplateValue, id) : null;
 
-        // récupérer quelques étiquettes (si tu les stockes en data-* sur le slot)
-        const title = slot.dataset.title || '';
-        const userLabel = slot.dataset.userLabel || '';
+        // ⚠️ bien utiliser d'autres noms que "title" pour éviter le TDZ
+        const slotTitle    = slot.dataset.title || '';
+        const userLabel    = slot.dataset.userLabel || '';
         const projectLabel = slot.dataset.projectLabel || '';
-        const status = slot.dataset.status || '';
+        const status       = slot.dataset.status || '';
 
         window.dispatchEvent(new CustomEvent('planner-grid:open-detail', {
             detail: {
-                id, title, start_at: startIso, end_at: endIso,
-                user_id: this.userIdValue || '', project_id: this.projectIdValue || '',
-                user_label: userLabel, project_label: projectLabel, status,
-                updateUrl: upd, mode: this.modeValue
+                id,
+                title: slotTitle,
+                start_at: startIso,
+                end_at:   endIso,
+                user_id:    this.userIdValue || '',
+                project_id: this.projectIdValue || '',
+                user_label: userLabel,
+                project_label: projectLabel,
+                status,
+                updateUrl,
+                mode: this.modeValue
             }
         }));
     }

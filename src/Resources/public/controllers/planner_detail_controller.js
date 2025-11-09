@@ -34,13 +34,37 @@ export default class extends Controller {
         this.userInputTarget.value  = d.user_id || '';
         this.projectInputTarget.value = d.project_id || '';
 
-        this.viewBlockTarget.classList.remove('d-none');
-        this.formBlockTarget.classList.add('d-none');
-        this.editBtnTarget.classList.remove('d-none');
-        if (!d || !d.updateUrl) {
-          this.editBtnTarget.classList.add('d-none');
+        // Selon le contexte: update (id présent) ou create (id absent)
+        const grid = document.querySelector('.mptp .mptp-grid-body');
+        const hasUpdate = !!d.updateUrl;
+        const hasCreate = !!grid?.dataset.plannerGridCreateUrlValue;
+
+        if (hasUpdate) {
+            // Mode "détail" + bouton Modifier visible
+            this.viewBlockTarget.classList.remove('d-none');
+            this.formBlockTarget.classList.add('d-none');
+            this.editBtnTarget.classList.remove('d-none');
+            this.saveBtnTarget.classList.add('d-none');
+            this.saveBtnTarget.textContent = 'Enregistrer';
+            this.element.querySelector('.modal-title').textContent = d.title ? d.title : 'Détail du créneau';
+        } else {
+            // Mode "création" direct
+            this.viewBlockTarget.classList.add('d-none');
+            this.formBlockTarget.classList.remove('d-none');
+            this.editBtnTarget.classList.add('d-none');
+            this.saveBtnTarget.classList.remove('d-none');
+            this.saveBtnTarget.textContent = 'Créer';
+            this.element.querySelector('.modal-title').textContent = 'Nouveau créneau';
+
+            // Si aucune route POST configurée, on désactive "Créer"
+            if (!hasCreate) {
+                this.saveBtnTarget.disabled = true;
+                this.saveBtnTarget.title = 'Aucune route de création configurée';
+            } else {
+                this.saveBtnTarget.disabled = false;
+                this.saveBtnTarget.title = '';
+            }
         }
-        this.saveBtnTarget.classList.add('d-none');
 
         this.modal?.show();
     }
@@ -49,6 +73,7 @@ export default class extends Controller {
         this.formBlockTarget.classList.remove('d-none');
         this.editBtnTarget.classList.add('d-none');
         this.saveBtnTarget.classList.remove('d-none');
+        this.saveBtnTarget.textContent = 'Enregistrer';
     }
     async save() {
         const payload = {
