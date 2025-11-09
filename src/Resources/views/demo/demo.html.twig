@@ -3,11 +3,12 @@
 {#period: 'day' | 'week' | 'workweek' | 'month' #}
 {#anchor: 'YYYY-MM-DD' | 'today'#}
 
-
-
-{{ component('planner_user_view', {
-    mode: 'user',
-    userId: 1,
-    period: 'week',
-    anchor: 'today'
-}) }}
+{% extends "base.html.twig" %}
+{% block body %}
+    {{ component('planner_user_view', {
+        mode: 'user',
+        userId: 1,
+        period: 'week',
+        anchor: 'today'
+    }) }}
+{% endblock %}

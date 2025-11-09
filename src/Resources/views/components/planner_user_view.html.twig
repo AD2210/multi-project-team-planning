@@ -1,15 +1,14 @@
 {# wrapper Live #}
-<div {{ attributes }} class="mptp-user-view">
+<div {{ attributes }} class="mptp-user-view container-fluid">
     {% include '@MultiProjectTeamPlanning/components/user/_toolbar.html.twig' with {
         ui: this.ui,
         comp: this,
-        days: this.window.days
     } only %}
 
     {% include '@MultiProjectTeamPlanning/components/user/_grid.html.twig' with {
         ui: this.ui,
         comp: this,
-        window: this.window,
+        days: this.daysForView,
         grid: this.grid
     } only %}
 </div>
