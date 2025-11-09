@@ -4,7 +4,12 @@
 
 <div class="mptp-grid mptp-grid-body"
      data-controller="planner-grid"
-     data-action="pointerdown->planner-grid#pointerDown planner-grid:update-context->planner-grid#updateContext"
+     data-action="
+        pointerdown->planner-grid#pointerDown
+        planner-grid:update-context->planner-grid#updateContext
+        click->planner-grid#selectSlot
+        keydown->planner-grid#keyDown
+     "
      data-planner-grid-minute-step-value="{{ g.minute_step }}"
      data-planner-grid-row-height-value="28"
      data-planner-grid-first-minute-value="{{ rows|first.minute }}"

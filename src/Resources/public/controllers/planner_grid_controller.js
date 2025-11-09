@@ -131,6 +131,16 @@ export default class extends Controller {
         if (clientY < rect.top + pad)  this.scrollEl.scrollTop -= step;
         if (clientY > rect.bottom - pad) this.scrollEl.scrollTop += step;
     }
+    _select(el) {
+        if (!el) return;
+        this._clearSelection();
+        el.classList.add('is-selected');
+        this._selected = el;
+    }
+    _clearSelection() {
+        this.element.querySelectorAll('.slot.is-selected').forEach(n => n.classList.remove('is-selected'));
+        this._selected = null;
+    }
 
     // ===== Helpers API =====
     _headers() {
@@ -209,6 +219,13 @@ export default class extends Controller {
             // fallback: pas de route duplicate => on fait un create
             await this._apiCreate(a, a.el);
         }
+    }
+    async _apiDelete(id) {
+        const url = this._urlWithId(this.deleteUrlTemplateValue, id);
+        if (!id || !url) return { ok: true }; // si pas d'API delete, on considère OK pour slots non persistés
+        const res = await fetch(url, { method: 'DELETE', headers: this._headers() });
+        if (!res.ok) throw new Error(await res.text());
+        return { ok: true };
     }
 
     // ---- Drag and drop (create/drag/duplicate/resize)
@@ -341,5 +358,48 @@ export default class extends Controller {
         // reload simple : supprimer les slots actuels puis recharger
         this.element.querySelectorAll('.slot').forEach(el => el.remove());
         this._loadInitialSlots().catch(console.error);
+    }
+    selectSlot(e) {
+        // ignore si on clique hors slot
+        const slot = e.target.closest('.slot');
+        if (!slot) { this._clearSelection(); return; }
+        this._select(slot);
+    }
+
+    keyDown(e) {
+        // Delete / Backspace → delete
+        if (e.key === 'Delete' || e.key === 'Backspace') {
+            e.preventDefault();
+            this._deleteSelected().catch(console.error);
+        }
+        // ESC → clear
+        if (e.key === 'Escape') {
+            this._clearSelection();
+        }
+    }
+    async _deleteSelected() {
+        const el = this._selected;
+        if (!el) return;
+        const id = el.dataset.id || '';
+
+        // Optimistic UI: retirer du DOM, mais garder une ancre pour rollback
+        const parent = el.parentElement;
+        const nextSibling = el.nextSibling;
+        parent.removeChild(el);
+        this._selected = null;
+
+        try {
+            if (id) {
+                await this._apiDelete(id);
+            } else {
+                // Slot non persisté: rien à faire côté API
+            }
+        } catch (err) {
+            console.error('Delete failed', err);
+            // rollback
+            if (nextSibling) parent.insertBefore(el, nextSibling);
+            else parent.appendChild(el);
+            this._select(el);
+        }
     }
 }
