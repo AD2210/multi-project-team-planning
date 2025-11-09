@@ -1,0 +1,31 @@
+{% set tb = ui.toolbar %}
+<div class="mptp-toolbar">
+    <div class="left">
+        <button data-action="live#action" data-live-name="prev">‹</button>
+        <button data-action="live#action" data-live-name="today">Aujourd’hui</button>
+        <button data-action="live#action" data-live-name="next">›</button>
+
+        {% if tb.anchor_location == 'toolbar' %}
+            <input type="date" data-model="anchor"
+                   value="{{ comp.anchor == 'today' ? 'now'|date('Y-m-d') : comp.anchor }}">
+        {% endif %}
+    </div>
+
+    <div class="center">
+        {# selector user (si mode user) — paramétrable : toolbar/sidebar #}
+        {% if comp.mode == 'user' and tb.user_selector_location == 'toolbar' %}
+            <select data-model="userId">
+                <option value="">— Utilisateur —</option>
+                {# options alimentés par l’app hôte plus tard #}
+            </select>
+        {% endif %}
+    </div>
+
+    <div class="right">
+        {% set views = tb.views %}
+        {% if views.day %}<button data-action="live#action" data-live-name="setPeriod" data-live-period-param="day"  class="{{ comp.period == 'day' ? 'active' : '' }}">Jour</button>{% endif %}
+        {% if views.week %}<button data-action="live#action" data-live-name="setPeriod" data-live-period-param="week" class="{{ comp.period == 'week' ? 'active' : '' }}">Semaine</button>{% endif %}
+        {% if views.workweek %}<button data-action="live#action" data-live-name="setPeriod" data-live-period-param="workweek" class="{{ comp.period == 'workweek' ? 'active' : '' }}">Travail</button>{% endif %}
+        {% if views.month %}<button data-action="live#action" data-live-name="setPeriod" data-live-period-param="month" class="{{ comp.period == 'month' ? 'active' : '' }}">Mois</button>{% endif %}
+    </div>
+</div>

@@ -2,6 +2,7 @@
 
 namespace Ad2210\MultiProjectTeamPlanning\DependencyInjection;
 
+use Ad2210\MultiProjectTeamPlanning\Options\PlannerOptions;
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Loader\YamlFileLoader;
@@ -11,10 +12,15 @@ final class MultiProjectTeamPlanningExtension extends Extension
 {
     public function load(array $configs, ContainerBuilder $container): void
     {
-        $locator = new FileLocator(__DIR__ . '/../Resources/config');
-        $loader  = new YamlFileLoader($container, $locator);
+        $conf = $this->processConfiguration(new Configuration(), $configs);
 
-        // charge le fichier services.yaml du bundle (si présent)
-        $loader->load('services.yaml');
+        $loader = new YamlFileLoader($container, new FileLocator(__DIR__.'/../Resources/config'));
+        if (file_exists(__DIR__.'/../Resources/config/services.yaml')) {
+            $loader->load('services.yaml');
+        }
+
+        $container->register(PlannerOptions::class)
+            ->addArgument($conf)
+            ->setPublic(false);
     }
 }

@@ -1,7 +1,41 @@
 ad2210_planning:
   timezone: 'Europe/Paris'
-  week_start: 'monday'
-  work_hours:
-    start: '07:00'
-    end: '19:00'
-  slot_min_duration: 'PT15M' # ISO 8601 duration
+
+  # valeurs par défaut (facultatives)
+  toolbar:
+    anchor_location: toolbar
+    user_selector_location: toolbar
+    views: { day: true, week: true, workweek: true, month: true }
+
+  grid:
+    work_start: '07:00'
+    work_end: '19:00'
+    overflow_hours: 2
+    now_indicator: true
+    highlight_current_day: true
+    minute_step: 30
+    half_hour_opacity: 0.25
+    day_label_format: 'EEE d MMM'
+    time_label_format: 'HH:mm'
+
+  modes:
+    global:
+      toolbar:
+        anchor_location: sidebar
+        views: { month: true, week: true, workweek: false, day: false }
+      grid:
+        minute_step: 60
+
+    user:
+      toolbar:
+        anchor_location: toolbar
+        user_selector_location: toolbar
+      grid:
+        minute_step: 30
+
+    project:
+      toolbar:
+        anchor_location: toolbar
+        user_selector_location: sidebar
+      grid:
+        overflow_hours: 1
