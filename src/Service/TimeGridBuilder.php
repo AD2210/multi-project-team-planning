@@ -21,10 +21,12 @@ final class TimeGridBuilder
         $start = DateTimeImmutable::createFromFormat('H:i', $whStart)->modify("-{$overflow} hours");
         $end   = DateTimeImmutable::createFromFormat('H:i', $whEnd)->modify("+{$overflow} hours");
 
+        $timeFmtPhp = DateFormatter::icuToPhp($g['time_label_format'] ?? 'H:i');
+
         $rows = [];
         for ($t = $start; $t < $end; $t = $t->add(new DateInterval("PT{$step}M"))) {
             $rows[] = [
-                'label'  => $t->format($g['time_label_format'] ?? 'H:i'),
+                'label'  => DateFormatter::formatIcu($t, $g['time_label_format'] ?? 'HH:mm', $this->opt->locale(), $this->opt->tz()),
                 'minute' => ((int)$t->format('H')) * 60 + (int)$t->format('i'),
             ];
         }

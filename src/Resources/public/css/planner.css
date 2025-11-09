@@ -1,0 +1,81 @@
+/* Scope composant */
+.mptp {
+    /* variables personnalisables par thème */
+    --mptp-row-h: 28px;
+    --mptp-border: #e5e7eb;
+    --mptp-hour-color: #6b7280;
+    --mptp-day-bg: #f8f9fa;     /* Bootstrap light */
+    --mptp-today-bg: rgba(255,235,59,.07);
+    --mptp-now: #dc3545;        /* Bootstrap danger */
+    --mptp-max-h: calc(100vh - 160px); /* ajuste selon ta navbar/header */
+}
+
+/* Zone scrollable (grille uniquement) */
+.mptp .mptp-grid-scroll {
+    max-height: var(--mptp-max-h);
+    overflow-y: auto;
+    background: #fff;
+}
+
+/* Grille */
+.mptp .mptp-grid {
+    display: grid;
+}
+
+/* Colonne heures (gauche) */
+.mptp .mptp-hours {
+    border-right: 1px solid var(--mptp-border);
+    background: #fff;
+}
+.mptp .mptp-hours .cell {
+    height: var(--mptp-row-h);
+    line-height: var(--mptp-row-h);
+    font-size: .78rem;
+    color: var(--mptp-hour-color);
+    text-align: right;
+    padding-right: 8px;
+    margin-top: -14px;
+}
+/* Heure pleine: bord + texte au trait */
+.mptp .mptp-hours .cell.is-hour {
+    margin-top: 14px;
+    padding-top: 0;
+    font-weight: 500;
+}
+
+/* Colonnes jours */
+.mptp .mptp-col {
+    border-left: none;
+    position: relative;
+    background: #fff;
+    border-right: 1px solid rgba(0, 0, 0, .25);
+}
+.mptp .mptp-col .slot-row {
+    height: var(--mptp-row-h);
+    border-top: 1px solid rgba(0,0,0,.25); /* opacité réglée inline si besoin */
+}
+.mptp .mptp-col .slot-row.is-half {
+    border-top-color: rgba(0,0,0,.25);
+}
+.mptp .mptp-col .slot-row.is-hour {
+    border-top-color: var(--mptp-border);
+}
+
+/* En-tête jour */
+.mptp .mptp-day-header {
+    padding: 6px 8px;
+    font-weight: 600;
+    border-bottom: 1px solid var(--mptp-border);
+}
+
+/* Jour courant + ligne "now" */
+.mptp .mptp-col.today {
+    background: linear-gradient(0deg, var(--mptp-today-bg), var(--mptp-today-bg));
+}
+.mptp .mptp-now {
+    position: absolute;
+    left: 0; right: 0;
+    height: 2px;
+    background: var(--mptp-now);
+    z-index: 2;
+}

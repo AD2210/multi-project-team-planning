@@ -1,0 +1,8 @@
+{# header: colonne vide (heures) + en-têtes de jours #}
+<div class="mptp-grid mptp-grid-header"
+     style="grid-template-columns: 90px repeat({{ days|length }}, 1fr);">
+    <div>&nbsp;</div>
+    {% for d in days %}
+        <div class="mptp-day-header text-center">{{ d.label }}</div>
+    {% endfor %}
+</div>

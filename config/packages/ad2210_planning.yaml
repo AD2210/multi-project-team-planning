@@ -1,5 +1,6 @@
 ad2210_planning:
   timezone: 'Europe/Paris'
+  locale: 'fr_FR'
 
   # valeurs par défaut (facultatives)
   toolbar:
@@ -15,8 +16,8 @@ ad2210_planning:
     highlight_current_day: true
     minute_step: 30
     half_hour_opacity: 0.25
-    day_label_format: 'EEE d MMM'
-    time_label_format: 'HH:mm'
+    day_label_format: 'EEE d MMM' # Format ICU
+    time_label_format: 'HH:mm' # Format ICU
 
   modes:
     global:

@@ -1,0 +1,33 @@
+{% set g = ui.grid %}
+{% set rows = grid.rows %}
+
+<div class="mptp-grid mptp-grid-body"
+     style="grid-template-columns: 90px repeat({{ days|length }}, 1fr);">
+
+    {# Colonne heures (labels alignés à droite, aucune bordure) #}
+    <div class="mptp-hours">
+        {% for r in rows %}
+            {% set isHour = (r.minute % 60 == 0) %}
+            <div class="cell {{ isHour ? 'is-hour' : '' }}">
+                {% if isHour %}{{ r.label }}{% endif %}
+            </div>
+        {% endfor %}
+    </div>
+
+    {# Colonnes par jour #}
+    {% for d in days %}
+        <div class="mptp-col {{ d.date|date('Y-m-d') == 'now'|date('Y-m-d') and g.highlight_current_day ? 'today' }}">
+            {# now-line: le header est séparé => plus de +1 ligne ! #}
+            {% if g.now_indicator and d.date|date('Y-m-d') == 'now'|date('Y-m-d') %}
+                {% set nowMinute = 'now'|date('H')*60 + 'now'|date('i') %}
+                {% set firstRow = rows|first %}
+                {% set offset = max([(nowMinute - firstRow.minute) / (g.minute_step), 0]) %}
+                <div class="mptp-now" style="top: calc({{ offset }} * var(--mptp-row-h));"></div>
+            {% endif %}
+
+            {% for r in rows %}
+                <div class="slot-row {{ (r.minute % 60 == 0) ? 'is-hour' : 'is-half' }}"></div>
+            {% endfor %}
+        </div>
+    {% endfor %}
+</div>

@@ -1,14 +1,19 @@
-{# wrapper Live #}
-<div {{ attributes }} class="mptp-user-view container-fluid">
+<div {{ attributes }} class="mptp mptp-user-view container-fluid">
     {% include '@MultiProjectTeamPlanning/components/user/_toolbar.html.twig' with {
         ui: this.ui,
-        comp: this,
+        comp: this
     } only %}
 
-    {% include '@MultiProjectTeamPlanning/components/user/_grid.html.twig' with {
+    {% include '@MultiProjectTeamPlanning/components/user/_grid_header.html.twig' with {
+        days: this.daysForView
+    } only %}
+
+    <div class="mptp-grid-scroll">
+        {% include '@MultiProjectTeamPlanning/components/user/_grid_body.html.twig' with {
         ui: this.ui,
         comp: this,
         days: this.daysForView,
         grid: this.grid
-    } only %}
+        } only %}
+    </div>
 </div>

@@ -3,6 +3,7 @@ namespace Ad2210\MultiProjectTeamPlanning\Twig\Components;
 
 use Ad2210\MultiProjectTeamPlanning\Enum\Period;
 use Ad2210\MultiProjectTeamPlanning\Options\PlannerOptions;
+use Ad2210\MultiProjectTeamPlanning\Service\DateFormatter;
 use Ad2210\MultiProjectTeamPlanning\Service\TimeGridBuilder;
 use Ad2210\MultiProjectTeamPlanning\Service\ViewWindow;
 use Symfony\UX\LiveComponent\Attribute\AsLiveComponent;
@@ -67,7 +68,6 @@ final class PlannerUserView
     /** @return array{rows:array<int,array{label:string, minute:int}>, start:string, end:string} */
     public function getGrid(): array
     {
-        // ⚠️ passe le mode pour récupérer la minute_step/labels corrects
         return $this->grid->buildRows($this->mode);
     }
 
@@ -76,15 +76,19 @@ final class PlannerUserView
      */
     public function getDaysForView(): array
     {
-        $uiGrid = $this->opt->gridFor($this->mode);
-        $fmt = $uiGrid['day_label_format'] ?? 'D d M';
+        $g   = $this->opt->gridFor($this->mode);
+        $icu = $g['day_label_format'] ?? 'EEE d MMM';
 
         $days = [];
         foreach ($this->getWindow()['days'] as $d) {
-            $days[] = ['date' => $d, 'label' => $d->format($fmt)];
+            $days[] = [
+                'date'  => $d,
+                'label' => DateFormatter::formatIcu($d, $icu, $this->opt->locale(), $this->opt->tz()),
+            ];
         }
         return $days;
     }
+
 
     public function getUi(): array
     {

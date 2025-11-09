@@ -6,7 +6,14 @@ final class PlannerOptions
 {
     public function __construct(private array $config) {}
 
-    public function tz(): string { return $this->config['timezone'] ?? 'Europe/Paris'; }
+    public function tz(): string
+    {
+        return $this->config['timezone'] ?? 'Europe/Paris';
+    }
+    public function locale(): string
+    {
+        return $this->config['locale'] ?? 'fr_FR';
+    }
 
     /** @return array merged defaults + overrides for $mode */
     public function toolbarFor(string $mode): array {

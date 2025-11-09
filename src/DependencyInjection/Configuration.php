@@ -16,6 +16,7 @@ final class Configuration implements ConfigurationInterface
             ->children()
                 // --- Base ---
                 ->scalarNode('timezone')->defaultValue('Europe/Paris')->end()
+                ->scalarNode('locale')->defaultValue('fr_FR')->end()
 
                 // --- Toolbar (valeurs par défaut communes) ---
                 ->arrayNode('toolbar')
