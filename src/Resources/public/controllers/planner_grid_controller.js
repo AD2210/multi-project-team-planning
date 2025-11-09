@@ -126,8 +126,21 @@ export default class extends Controller {
     _emit(name, detail) {
         this.element.dispatchEvent(new CustomEvent(name, { bubbles: true, detail }));
     }
-    _on = (el, ev, cb) => { el.addEventListener(ev, cb); this._binders.push(()=>el.removeEventListener(ev, cb)); };
-    _offAll = () => { while (this._binders.length) this._binders.pop()(); };
+    _on = (el, ev, cb) => { el.addEventListener(ev, cb); this._binders.push(()=>el.removeEventListener(ev, cb)); }
+
+    _offAll() {
+        if (this._dragBound) {
+            document.removeEventListener('pointermove', this._onMove);
+            document.removeEventListener('pointerup',   this._onUp);
+            this._dragBound = false;
+        }
+        // Si tu avais déjà ces lignes, garde-les :
+        if (this.longPressTimer) {
+            clearTimeout(this.longPressTimer);
+            this.longPressTimer = null;
+        }
+        this._clearHint();
+    }
     _colFromPoint(clientX, clientY) {
         // pendant le drag on met pointer-events:none sur le slot pour pouvoir "voir" la colonne
         const el = document.elementFromPoint(clientX, clientY);
@@ -274,6 +287,7 @@ export default class extends Controller {
                 baseStartMinute: start, baseEndMinute: end,
                 baseY: e.clientY
             };
+            this._updateHintAtSlot(this.active);
             this.element.classList.add('is-dragging');
             this._bindDrag();
             e.preventDefault();
@@ -331,6 +345,7 @@ export default class extends Controller {
                     startMinute: m0, endMinute: m0 + this.minuteStepValue,
                     startStep: step0
                 };
+                this._updateHintAtSlot(this.active);
                 this.pending = null;
                 this.element.classList.add('is-dragging');
             }
@@ -340,7 +355,16 @@ export default class extends Controller {
         e.preventDefault();
     }
 
-    _bindDrag() { this._on(window,'pointermove', e=>this.pointerMove(e)); this._on(window,'pointerup', e=>this.pointerUp(e)); }
+    _bindDrag() {
+        if (this._dragBound) return;
+        this._onMove = (e) => this.pointerMove(e);
+        this._onUp   = (e) => this.pointerUp(e);
+
+        document.addEventListener('pointermove', this._onMove, { passive: false });
+        document.addEventListener('pointerup',   this._onUp,   { passive: false });
+
+        this._dragBound = true;
+    }
 
     pointerMove(e) {
         // auto-scroll
@@ -357,6 +381,7 @@ export default class extends Controller {
                 a.startMinute = a.baseStartMinute + shift;
                 a.endMinute   = a.baseEndMinute + shift;
                 a.el.style.top = `${this._topFromMinute(a.startMinute)}px`;
+                this._updateHintAtSlot(this.active);
                 return;
             }
             if (a.mode === 'create') {
@@ -367,6 +392,7 @@ export default class extends Controller {
                 const height = this._topFromMinute(a.endMinute) - top;
                 a.el.style.top = `${top}px`;
                 a.el.style.height = `${Math.max(height, this._rowPx)}px`;
+                this._updateHintAtSlot(this.active);
                 return;
             }
             if (a.mode === 'resize-top' || a.mode === 'resize-bottom') {
@@ -378,12 +404,14 @@ export default class extends Controller {
                     const height = this._topFromMinute(a.endMinute) - top;
                     a.el.style.top = `${top}px`;
                     a.el.style.height = `${Math.max(height, this._rowPx)}px`;
+                    this._updateHintAtSlot(this.active);
                     return;
                 }
                 if (a.mode === 'resize-bottom') {
                     a.endMinute = Math.max(a.baseEndMinute + shift, a.baseStartMinute + this.minuteStepValue);
                     const height = this._topFromMinute(a.endMinute) - this._topFromMinute(a.startMinute);
                     a.el.style.height = `${Math.max(height, this._rowPx)}px`;
+                    this._updateHintAtSlot(this.active);
                     return;
                 }
             }
@@ -429,6 +457,7 @@ export default class extends Controller {
                 a.el.dataset.endMinute   = String(a.endMinute);
                 await this._apiCreate(a, a.el);
                 this._select(a.el);
+                this._clearHint();
                 this.active = null;
                 return;
             }
@@ -441,6 +470,7 @@ export default class extends Controller {
                 } else if (changedDate || changedStart || changedEnd) {
                     await this._apiUpdate(a);
                 }
+                this._clearHint();
                 this.active = null;
                 return;
             }
@@ -451,6 +481,7 @@ export default class extends Controller {
                 if (changedStart || changedEnd) {
                     await this._apiUpdate(a);
                 }
+                this._clearHint();
                 this.active = null;
                 return;
             }
@@ -490,7 +521,7 @@ export default class extends Controller {
 
     keyDown(e) {
         // Empêche les comportements par défaut gênants
-        if (e.key !== 'Delete' && e.key !== 'Escape') {
+        if (e.key !== 'Delete' && e.key !== 'Escape' && e.key !== 'F5' && e.key !== 'Control') {
             e.preventDefault();            // évite le scroll page
             return;
         }
@@ -551,6 +582,7 @@ export default class extends Controller {
                 baseStartMinute: p.baseStartMinute, baseEndMinute: p.baseEndMinute,
                 baseY: e.clientY,
             };
+            this._updateHintAtSlot(this.active);
             this.pending = null;
             this.element.classList.add('is-dragging');
             return;
@@ -565,8 +597,92 @@ export default class extends Controller {
                 startMinute: p.startMinute, endMinute: p.startMinute + this.minuteStepValue,
                 startStep: p.startStep
             };
+            this._updateHintAtSlot(this.active);
             this.pending = null;
             this.element.classList.add('is-dragging');
+        }
+    }
+
+    // Helpers Hint
+    _fmtMinute(minute) {
+        const h = String(Math.floor(minute / 60)).padStart(2,'0');
+        const m = String(minute % 60).padStart(2,'0');
+        return `${h}:${m}`;
+    }
+    _fmtDuration(mins) {
+        const sign = mins < 0 ? '-' : '';
+        mins = Math.abs(mins);
+        const h = Math.floor(mins / 60);
+        const m = mins % 60;
+        return h ? `${sign}${h}h${String(m).padStart(2,'0')}` : `${sign}${m}min`;
+    }
+    _ensureHint() {
+        if (this._hintEl) return this._hintEl;
+        const el = document.createElement('div');
+        el.className = 'mptp-drag-hint';
+        el.textContent = '';
+        // parent = wrapper .mptp (pour rester dans la zone scrollable)
+        const root = this.element.closest('.mptp') || this.element;
+        root.appendChild(el);
+        this._hintEl = el;
+        return el;
+    }
+    _updateHint(a, clientX, clientY, labelPrefix = '') {
+        const el = this._ensureHint();
+        const rect = (this.element.closest('.mptp') || this.element).getBoundingClientRect();
+        // contenu : HH:mm–HH:mm (durée) + mode
+        const start = this._fmtMinute(a.startMinute);
+        const end   = this._fmtMinute(a.endMinute);
+        const dur   = this._fmtDuration(a.endMinute - a.startMinute);
+        const modeTxt = labelPrefix || (a.mode === 'duplicate' ? 'Dupliquer' :
+            a.mode === 'drag' ? 'Déplacer' :
+                a.mode?.startsWith('resize') ? 'Redimensionner' :
+                    a.mode === 'create' ? 'Créer' : '');
+        this._hintEl.innerHTML = `${start}&nbsp;–&nbsp;${end} <small>(${dur})</small>${modeTxt ? `&nbsp;<small>${modeTxt}</small>` : ''}`;
+
+        // positionner au-dessus du pointeur, dans le repère du root
+        const x = clientX - rect.left;
+        const y = clientY - rect.top - 8; // petit décalage vers le haut
+        this._hintEl.style.left = `${x}px`;
+        this._hintEl.style.top  = `${y}px`;
+        this._hintEl.style.display = 'block';
+    }
+    _ensureSlotHint(a) {
+        if (!a || !a.el) return null;
+        let h = a.el.querySelector('.slot-hint');
+        if (!h) {
+            h = document.createElement('div');
+            h.className = 'slot-hint';
+            a.el.appendChild(h);
+        }
+        return h;
+    }
+    _updateHintAtSlot(a, labelPrefix = '') {
+        if (!a || !a.el) return;
+        const h = this._ensureSlotHint(a);
+        if (!h) return;
+
+        const start = this._fmtMinute(a.startMinute);
+        const end   = this._fmtMinute(a.endMinute);
+        const dur   = this._fmtDuration(a.endMinute - a.startMinute);
+        const modeTxt = labelPrefix || (a.mode === 'duplicate' ? 'Dupliquer'
+            : a.mode === 'drag' ? 'Déplacer'
+                : a.mode?.startsWith('resize') ? 'Redimensionner'
+                    : a.mode === 'create' ? 'Créer' : '');
+
+        h.innerHTML = `${start}&nbsp;–&nbsp;${end} <small>(${dur})</small>${modeTxt ? `&nbsp;<small>${modeTxt}</small>` : ''}`;
+        h.style.display = 'block';
+    }
+    _clearHint() {
+        // supprime le hint du slot actif (s’il existe)
+        if (this.active?.el) {
+            const sh = this.active.el.querySelector('.slot-hint');
+            if (sh) sh.remove();
+        }
+        // fallback: si un ancien hint global existait
+        if (this._hintEl) {
+            this._hintEl.remove();
+            this._hintEl = null;
         }
     }
 }

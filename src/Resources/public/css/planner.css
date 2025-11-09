@@ -102,3 +102,35 @@
 }
 
 .mptp .mptp-grid-body:focus { outline: none; }
+
+/* Hint en bas de la div pendant drag/resize/duplicate */
+.mptp-drag-hint {
+    position: fixed;
+    z-index: 9999;
+    pointer-events: none;
+    padding: .25rem .5rem;
+    font-size: .75rem;
+    line-height: 1;
+    border-radius: .375rem;
+    background: rgba(33,37,41,.92);
+    color: #fff;
+    box-shadow: 0 4px 14px rgba(0,0,0,.25);
+    white-space: nowrap;
+}
+
+.mptp .slot .slot-hint{
+    position:absolute;
+    right:6px;
+    bottom:6px;
+    padding:.15rem .35rem;
+    font-size:.70rem;
+    line-height:1;
+    border-radius:.35rem;
+    pointer-events:none;
+    background:rgba(33,37,41,.92);
+    color:#fff;
+    box-shadow:0 2px 8px rgba(0,0,0,.2);
+    white-space:nowrap;
+}
+
+.mptp-drag-hint small { opacity: .85; margin-left: .35rem; }
