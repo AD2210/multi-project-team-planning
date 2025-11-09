@@ -10,8 +10,7 @@
     .mptp-hours .cell { height: 28px; display:flex; align-items:flex-start; padding-top:2px; font-size:.78rem; color:#6b7280; }
     .mptp-col { border-left:1px solid #e5e7eb; position:relative; }
     .mptp-col .slot-row { height: 28px; border-top: 1px solid rgba(0,0,0,{{ g.half_hour_opacity }}); }
-    .mptp-col .slot-row:nth-child(2n+1){ border-top-color:#e5e7eb; } /* heure pleine un peu plus visible */
-
+    .mptp-col .slot-row:nth-child(2n+1){ border-top-color:#e5e7eb; }
     .mptp-col.today { background: linear-gradient(0deg, rgba(255,235,59,.07), rgba(255,235,59,.07)); }
     .mptp-now { position:absolute; left:0; right:0; height:2px; background:#ef4444; z-index:2; }
     .mptp-day-header { padding:6px 8px; font-weight:600; border-bottom:1px solid #e5e7eb; }
@@ -28,17 +27,16 @@
     {% for d in days %}
         {% set isToday = (highlightDay and d|date('Y-m-d') == 'now'|date('Y-m-d')) %}
         <div class="mptp-col {{ isToday ? 'today' }}">
-            <div class="mptp-day-header">{{ d|date(opt.grid.day_label_format) }}</div>
+            <div class="mptp-day-header">{{ d|date(g.day_label_format) }}</div>
 
-            {# “now” indicator (positionné serveur – on le passera au Stimulus pour live tick) #}
             {% if showNow and isToday %}
                 {% set nowMinute = 'now'|date('H')*60 + 'now'|date('i') %}
-                {% set firstMinute = rows|first.minute %}
-                {% set offsetMin = [nowMinute - firstMinute, 0]|max %}
-                <div class="mptp-now" style="top: {{ (offsetMin / (opt.grid.minute_step)) * 28 + 28 }}px"></div>
+                {% set firstRow = rows|first %}
+                {% set firstMinute = firstRow.minute %}
+                {% set offsetMin = max([nowMinute - firstMinute, 0]) %}
+                <div class="mptp-now" style="top: {{ (offsetMin / (g.minute_step)) * 28 + 28 }}px"></div>
             {% endif %}
 
-            {# rows #}
             {% for r in rows %}
                 <div class="slot-row"></div>
             {% endfor %}

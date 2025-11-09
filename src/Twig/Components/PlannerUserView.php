@@ -10,10 +10,12 @@ use Symfony\UX\LiveComponent\Attribute\LiveAction;
 use Symfony\UX\LiveComponent\Attribute\LiveProp;
 
 use DateTimeImmutable;
+use Symfony\UX\LiveComponent\DefaultActionTrait;
 
-#[AsLiveComponent('planner_user_view', template: '@MultiProjectTeamPlanning/components/planner_user_view.html.twig')]
+#[AsLiveComponent(name:'planner_user_view', template: '@MultiProjectTeamPlanning/components/planner_user_view.html.twig')]
 final class PlannerUserView
 {
+    use DefaultActionTrait;
     public function __construct(
         private ViewWindow $window,
         private TimeGridBuilder $grid,
@@ -56,7 +58,7 @@ final class PlannerUserView
     /** @return array{rows:array<int,array{label:string, minute:int}>, start:string, end:string} */
     public function getGrid(): array
     {
-        return $this->grid->buildRows();
+        return $this->grid->buildRows($this->mode);
     }
 
     #[LiveAction]
