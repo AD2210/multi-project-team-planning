@@ -10,8 +10,8 @@
        click->planner-grid#selectSlot
        dblclick->planner-grid#openDetail
        planner-grid:update-context->planner-grid#updateContext
-       keydown->planner-grid#keyDown
-       keydown@window->planner-grid#keyDown"
+       planner-grid:reload->planner-grid#reload
+       keydown->planner-grid#keyDown"
      data-planner-grid-minute-step-value="{{ g.minute_step }}"
      data-planner-grid-row-height-value="28"
      data-planner-grid-first-minute-value="{{ rows|first.minute }}"

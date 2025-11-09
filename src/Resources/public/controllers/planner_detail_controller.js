@@ -37,20 +37,20 @@ export default class extends Controller {
         this.viewBlockTarget.classList.remove('d-none');
         this.formBlockTarget.classList.add('d-none');
         this.editBtnTarget.classList.remove('d-none');
+        if (!d || !d.updateUrl) {
+          this.editBtnTarget.classList.add('d-none');
+        }
         this.saveBtnTarget.classList.add('d-none');
 
         this.modal?.show();
     }
-
     enterEdit() {
         this.viewBlockTarget.classList.add('d-none');
         this.formBlockTarget.classList.remove('d-none');
         this.editBtnTarget.classList.add('d-none');
         this.saveBtnTarget.classList.remove('d-none');
     }
-
     async save() {
-        if (!this.current?.updateUrl) return;
         const payload = {
             title: this.titleInputTarget.value || null,
             start_at: this._fromLocalInput(this.startInputTarget.value),
@@ -60,7 +60,6 @@ export default class extends Controller {
         };
 
         const headers = { 'Content-Type':'application/json' };
-        // récupère le jeton CSRF depuis la grille si dispo :
         const grid = document.querySelector('.mptp .mptp-grid-body');
         if (grid) {
             const hn = grid.dataset.plannerGridCsrfHeaderValue;
@@ -68,20 +67,34 @@ export default class extends Controller {
             if (hn && tv) headers[hn] = tv;
         }
 
-        const res = await fetch(this.current.updateUrl, {
-            method: 'PUT',
-            headers,
-            body: JSON.stringify(payload)
-        });
+        let ok = false;
 
-        if (!res.ok) {
-            console.error('Update failed', await res.text());
+        // 1) Update si possible
+        if (this.current?.updateUrl) {
+            const res = await fetch(this.current.updateUrl, {
+                method: 'PUT',
+                headers,
+                body: JSON.stringify(payload)
+            });
+            ok = res.ok;
+        }
+
+        // 2) Sinon fallback en create (si route dispo)
+        if (!ok && grid?.dataset.plannerGridCreateUrlValue) {
+            const res2 = await fetch(grid.dataset.plannerGridCreateUrlValue, {
+                method: 'POST',
+                headers,
+                body: JSON.stringify(payload)
+            });
+            ok = res2.ok;
+        }
+
+        if (!ok) {
+            console.error('Save failed (neither update nor create succeeded)');
             return;
         }
 
         this.modal?.hide();
-
-        // simple: on redemande à la grille de recharger
         grid?.dispatchEvent(new CustomEvent('planner-grid:reload', { bubbles: true }));
     }
 

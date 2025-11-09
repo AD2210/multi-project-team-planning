@@ -187,6 +187,13 @@ export default class extends Controller {
         const step = (minute - this.firstMinuteValue) / this.minuteStepValue;
         return step * this._rowPx;
     }
+    reload() {
+        this._clearSelection();
+        // supprime les slots actuels
+        this.element.querySelectorAll('.slot').forEach(el => el.remove());
+        // recharge depuis list_url avec le range courant
+        this._loadInitialSlots().catch(console.error);
+    }
 
     // ===== Helpers API =====
     _headers() {
@@ -211,8 +218,8 @@ export default class extends Controller {
         return p;
     }
     _urlWithId(tpl, id) {
-        if (!tpl) return '';
-        return tpl.replace('{id}', id).replace(':id', id);
+        if (!tpl || !id) return '';
+        return tpl.replace('{id}', encodeURIComponent(id));
     }
     async _loadInitialSlots() {
         if (!this.listUrlValue) return;
@@ -541,8 +548,8 @@ export default class extends Controller {
         const startIso = `${ymd}T${this._fmtMinute(startMin)}:00`;
         const endIso   = `${ymd}T${this._fmtMinute(endMin)}:00`;
 
-        // URL update pour ce slot
-        const upd = this._urlWithId(this.updateUrlTemplateValue, id);
+        // URL update pour ce slot renvoie null si pas d'id, on utilisera l'url create à la place
+        const upd = id ? this._urlWithId(this.updateUrlTemplateValue, id) : null;
 
         // récupérer quelques étiquettes (si tu les stockes en data-* sur le slot)
         const title = slot.dataset.title || '';
@@ -560,6 +567,17 @@ export default class extends Controller {
         }));
     }
     keyDown(e) {
+        // ignore si on rempli un form
+        const t = e.target;
+        if (t && (
+            t.tagName === 'INPUT' ||
+            t.tagName === 'TEXTAREA' ||
+            t.isContentEditable ||
+            t.closest('.modal')
+        )) {
+            return;
+        }
+
         // Empêche les comportements par défaut gênants
         if (e.key !== 'Delete' && e.key !== 'Escape' && e.key !== 'F5' && e.key !== 'Control') {
             e.preventDefault();            // évite le scroll page
