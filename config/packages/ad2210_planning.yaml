@@ -3,6 +3,7 @@ ad2210_planning:
   locale: 'fr_FR'
 
   api:
+    list_url:               '/api/planning/slots'
     create_url:             '/api/planning/slots'
     update_url_template:    '/api/planning/slots/{id}'
     duplicate_url_template: '/api/planning/slots/{id}/duplicate'

@@ -1,5 +1,6 @@
 {% set g = ui.grid %}
 {% set rows = grid.rows %}
+{% set api = ui.api %}
 
 <div class="mptp-grid mptp-grid-body"
      data-controller="planner-grid"
@@ -7,6 +8,7 @@
      data-planner-grid-minute-step-value="{{ g.minute_step }}"
      data-planner-grid-row-height-value="28"
      data-planner-grid-first-minute-value="{{ rows|first.minute }}"
+     data-planner-grid-list-url-value="{{ api.list_url ?? '' }}"
      data-planner-grid-create-url-value="{{ api.create_url ?? '' }}"
      data-planner-grid-update-url-template-value="{{ api.update_url_template ?? '' }}"
      data-planner-grid-duplicate-url-template-value="{{ api.duplicate_url_template ?? '' }}"
@@ -17,6 +19,8 @@
      data-planner-grid-user-id-value="{{ comp.userId ?? '' }}"
      data-planner-grid-project-id-value="{{ comp.projectId ?? '' }}"
      data-planner-grid-timezone-value="{{ ui.tz }}"
+     data-planner-grid-range-start-value="{{ rangeStart }}"
+     data-planner-grid-range-end-value="{{ rangeEnd }}"
      style="grid-template-columns: 90px repeat({{ days|length }}, 1fr);">
 
     <div class="mptp-hours">

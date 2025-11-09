@@ -21,6 +21,7 @@ final class Configuration implements ConfigurationInterface
                 ->arrayNode('api')
                     ->addDefaultsIfNotSet()
                     ->children()
+                        ->scalarNode('list_url')->defaultNull()->end()
                         ->scalarNode('create_url')->defaultNull()->end()              # ex: /api/planning/slots
                         ->scalarNode('update_url_template')->defaultNull()->end()     # ex: /api/planning/slots/{id}
                         ->scalarNode('duplicate_url_template')->defaultNull()->end()  # ex: /api/planning/slots/{id}/duplicate

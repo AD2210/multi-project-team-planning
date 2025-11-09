@@ -143,4 +143,16 @@ final class PlannerUserView
 
     #[LiveAction]
     public function setPeriod(string $period): void { $this->period = $period; }
+
+    public function getRangeStartYmd(): string
+    {
+        $days = array_values($this->getWindow()['days']);
+        return $days[0]->format('Y-m-d');
+    }
+
+    public function getRangeEndYmd(): string
+    {
+        $days = array_values($this->getWindow()['days']);
+        return $days[\count($days)-1]->format('Y-m-d');
+    }
 }

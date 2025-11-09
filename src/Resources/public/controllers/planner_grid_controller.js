@@ -20,6 +20,7 @@ export default class extends Controller {
         rowHeight: Number,
         firstMinute: Number,
         // API
+        listUrl: String,
         createUrl: String,
         updateUrlTemplate: String,
         duplicateUrlTemplate: String,
@@ -30,7 +31,10 @@ export default class extends Controller {
         mode: String,        // 'user' | 'project'
         userId: String,
         projectId: String,
-        timezone: String
+        timezone: String,
+        // Intervalle visible
+        rangeStart: String, // YYYY-MM-DD
+        rangeEnd: String    // YYYY-MM-DD
     };
 
     connect() {
@@ -38,9 +42,40 @@ export default class extends Controller {
         this.scrollEl = this.element.parentElement;
         this._binders = [];
         this.active = null; // {mode:'create'|'drag'|'resize-top'|'resize-bottom'|'duplicate', el, col, id, startMinute, endMinute, startY}
+        console.log('listUrl', this.listUrlValue, 'range', this.rangeStartValue, this.rangeEndValue);
+        this._loadInitialSlots().catch(console.error);
     }
 
     // ---- helpers
+    _parseMinuteFromIso(iso) {
+        // suppose "YYYY-MM-DDTHH:MM:SS"
+        const m = iso.match(/T(\d{2}):(\d{2})/);
+        if (!m) return this.firstMinuteValue;
+        const hh = parseInt(m[1],10);
+        const mm = parseInt(m[2],10);
+        return hh*60 + mm;
+    }
+    _renderSlot(slot) {
+        // slot attendu: { id, start_at, end_at, date? (facultatif), title?, color? }
+        const startMin = this._parseMinuteFromIso(slot.start_at);
+        const endMin   = this._parseMinuteFromIso(slot.end_at);
+        const dateYmd  = (slot.date) || (slot.start_at.substring(0,10));
+        const col = this.element.querySelector(`.mptp-col[data-date="${dateYmd}"]`);
+        if (!col) return;
+
+        const top = this._minuteToTop(Math.max(startMin, this.firstMinuteValue));
+        const height = this._minuteToTop(endMin) - this._minuteToTop(Math.max(startMin, this.firstMinuteValue));
+
+        const el = this._createSlotEl({ top, height: Math.max(height, this.rowHeightValue), col });
+        el.dataset.id = String(slot.id || '');
+        el.dataset.startMinute = String(startMin);
+        el.dataset.endMinute   = String(endMin);
+        el.title = slot.title || '';
+        if (slot.color) {
+            el.style.background = slot.color;
+            el.style.borderColor = slot.color;
+        }
+    }
     _colRect(col) {
         const r = col.getBoundingClientRect();
         const sTop = this.scrollEl?.scrollTop || 0;
@@ -124,7 +159,32 @@ export default class extends Controller {
         if (!tpl) return '';
         return tpl.replace('{id}', id).replace(':id', id);
     }
+    async _loadInitialSlots() {
+        if (!this.listUrlValue) return;
 
+        const params = new URLSearchParams({
+            start: this.rangeStartValue,
+            end:   this.rangeEndValue,
+            mode:  this.modeValue || '',
+            user_id: this.userIdValue || '',
+            project_id: this.projectIdValue || '',
+            timezone: this.timezoneValue || ''
+        });
+
+        const res = await fetch(`${this.listUrlValue}?${params.toString()}`, {
+            headers: { 'Accept': 'application/json' }
+        });
+        if (!res.ok) {
+            console.error('List failed', await res.text());
+            return;
+        }
+        const json = await res.json().catch(()=>[]);
+        if (Array.isArray(json)) {
+            json.forEach(s => this._renderSlot(s));
+        } else if (Array.isArray(json.data)) {
+            json.data.forEach(s => this._renderSlot(s));
+        }
+    }
     async _apiCreate(a, elForId) {
         if (!this.createUrlValue) return;
         const res = await fetch(this.createUrlValue, { method: 'POST', headers: this._headers(), body: JSON.stringify(this._basePayload(a)) });
