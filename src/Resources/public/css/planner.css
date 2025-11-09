@@ -34,11 +34,11 @@
     color: var(--mptp-hour-color);
     text-align: right;
     padding-right: 8px;
-    margin-top: -14px;
+    margin-top: -42px;
 }
 /* Heure pleine: bord + texte au trait */
 .mptp .mptp-hours .cell.is-hour {
-    margin-top: 14px;
+    margin-top: 42px;
     padding-top: 0;
     font-weight: 500;
 }
@@ -55,10 +55,10 @@
     border-top: 1px solid rgba(0,0,0,.25); /* opacité réglée inline si besoin */
 }
 .mptp .mptp-col .slot-row.is-half {
-    border-top-color: rgba(0,0,0,.25);
+    border-top-color: var(--mptp-border);
 }
 .mptp .mptp-col .slot-row.is-hour {
-    border-top-color: var(--mptp-border);
+    border-top-color: rgba(0,0,0,.25);
 }
 
 /* En-tête jour */

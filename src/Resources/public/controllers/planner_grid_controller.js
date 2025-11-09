@@ -84,9 +84,8 @@ export default class extends Controller {
     _yToMinute(y, col) {
         const rect = this._colRect(col);
         const relY = Math.max(0, y + (this.scrollEl?.scrollTop || 0) - rect.top);
-        const steps = relY / this.rowHeightValue;
-        const minute = this.firstMinuteValue + Math.round(steps) * this.minuteStepValue;
-        return Math.max(this.firstMinuteValue, minute);
+        const steps = Math.floor(relY / this.rowHeightValue);
+        return this.firstMinuteValue + steps * this.minuteStepValue;
     }
     _minuteToTop(minute) {
         const steps = (minute - this.firstMinuteValue) / this.minuteStepValue;
@@ -94,8 +93,8 @@ export default class extends Controller {
     }
     _snap(minute) {
         const m0 = this.firstMinuteValue;
-        const delta = Math.round((minute - m0) / this.minuteStepValue) * this.minuteStepValue;
-        return m0 + delta;
+        const steps = Math.floor((minute - m0) / this.minuteStepValue);
+        return m0 + steps * this.minuteStepValue;
     }
     _createSlotEl({ top, height, col }) {
         const el = document.createElement('div');
@@ -333,5 +332,14 @@ export default class extends Controller {
             await this._apiUpdate(a);
             return this.active = null;
         }
+    }
+
+    updateContext(event) {
+        const { userId, projectId } = event.detail || {};
+        if (typeof userId !== 'undefined')   this.userIdValue = String(userId);
+        if (typeof projectId !== 'undefined') this.projectIdValue = String(projectId);
+        // reload simple : supprimer les slots actuels puis recharger
+        this.element.querySelectorAll('.slot').forEach(el => el.remove());
+        this._loadInitialSlots().catch(console.error);
     }
 }

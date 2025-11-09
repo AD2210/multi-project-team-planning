@@ -4,7 +4,7 @@
 
 <div class="mptp-grid mptp-grid-body"
      data-controller="planner-grid"
-     data-action="pointerdown->planner-grid#pointerDown"
+     data-action="pointerdown->planner-grid#pointerDown planner-grid:update-context->planner-grid#updateContext"
      data-planner-grid-minute-step-value="{{ g.minute_step }}"
      data-planner-grid-row-height-value="28"
      data-planner-grid-first-minute-value="{{ rows|first.minute }}"
@@ -33,10 +33,10 @@
     </div>
 
     {% for d in days %}
-        <div class="mptp-col {{ d.date|date('Y-m-d') == 'now'|date('Y-m-d') and g.highlight_current_day ? 'today' }}"
+        <div class="mptp-col {{ d.ymd == 'now'|date('Y-m-d') and g.highlight_current_day ? 'today' }}"
              data-planner-grid-target="dayCol"
-             data-date="{{ d.date|date('Y-m-d') }}">
-            {% if g.now_indicator and d.date|date('Y-m-d') == 'now'|date('Y-m-d') %}
+             data-date="{{ d.ymd }}">
+        {% if g.now_indicator and d.date|date('Y-m-d') == 'now'|date('Y-m-d') %}
                 {% set nowMinute = 'now'|date('H')*60 + 'now'|date('i') %}
                 {% set firstRow = rows|first %}
                 {% set offset = max([(nowMinute - firstRow.minute) / (g.minute_step), 0]) %}
@@ -44,7 +44,8 @@
             {% endif %}
 
             {% for r in rows %}
-                <div class="slot-row {{ (r.minute % 60 == 0) ? 'is-hour' : 'is-half' }}"></div>
+                <div class="slot-row {{ (r.minute % 60 == 0) ? 'is-hour' : 'is-half' }}"
+                     data-minute="{{ r.minute }}"></div>
             {% endfor %}
         </div>
     {% endfor %}

@@ -85,6 +85,7 @@ final class PlannerUserView
         foreach ($this->getWindow()['days'] as $d) {
             $days[] = [
                 'date'  => $d,
+                'ymd'   => $d->format('Y-m-d'),
                 'label' => DateFormatter::formatIcu($d, $icu, $this->opt->locale(), $this->opt->tz()),
             ];
         }

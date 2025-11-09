@@ -1,6 +1,6 @@
 {% set tb = ui.toolbar %}
 
-<div class="mptp-toolbar py-2">
+<div class="mptp-toolbar py-2" data-controller="planner-toolbar">
     <div class="container-fluid">
         <div class="d-flex align-items-center gap-2 flex-wrap">
 
@@ -25,9 +25,23 @@
             <div class="ms-auto d-flex align-items-center gap-2">
                 {# Sélecteur user si mode=user et emplacement=toolbar #}
                 {% if comp.mode == 'user' and tb.user_selector_location == 'toolbar' %}
-                    <select class="form-select form-select-sm" data-model="userId" style="width: 220px;">
+                    <select class="form-select form-select-sm"
+                            data-action="change->planner-toolbar#updateUser"
+                            data-planner-toolbar-target="user">
                         <option value="">— Utilisateur —</option>
-                        {# TODO: options injectées par l’app hôte #}
+                        {# TODO: options dynamiques — pour test rapide: #}
+                        <option value="1" {{ comp.userId == 1 ? 'selected' }}>User 1</option>
+                        <option value="2" {{ comp.userId == 2 ? 'selected' }}>User 2</option>
+                    </select>
+                {% endif %}
+
+                {% if comp.mode == 'project' %}
+                    <select class="form-select form-select-sm"
+                            data-action="change->planner-toolbar#updateProject"
+                            data-planner-toolbar-target="project">
+                        <option value="">— Projet —</option>
+                        <option value="10">Projet 10</option>
+                        <option value="11">Projet 11</option>
                     </select>
                 {% endif %}
 
