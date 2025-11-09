@@ -37,12 +37,20 @@ export default class extends Controller {
         rangeEnd: String    // YYYY-MM-DD
     };
 
+    // debounce pour activation du drag
+    DRAG_THRESHOLD_PX = 6; // seuil de pixel au mouvement qui déclenche le drag
+    LONG_PRESS_MS = 350; // durée clic qui déclenche le drag
+
     connect() {
-        // cache scroll container (le parent direct est .mptp-grid-scroll)
         this.scrollEl = this.element.parentElement;
         this._binders = [];
-        this.active = null; // {mode:'create'|'drag'|'resize-top'|'resize-bottom'|'duplicate', el, col, id, startMinute, endMinute, startY}
-        console.log('listUrl', this.listUrlValue, 'range', this.rangeStartValue, this.rangeEndValue);
+        this.active = null;
+        this.pending = null;
+        this.longPressTimer = null;
+
+        const firstRow = this.element.querySelector('.slot-row');
+        this._rowPx = firstRow ? firstRow.getBoundingClientRect().height : (this._rowPx || 28);
+
         this._loadInitialSlots().catch(console.error);
     }
 
@@ -66,7 +74,7 @@ export default class extends Controller {
         const top = this._minuteToTop(Math.max(startMin, this.firstMinuteValue));
         const height = this._minuteToTop(endMin) - this._minuteToTop(Math.max(startMin, this.firstMinuteValue));
 
-        const el = this._createSlotEl({ top, height: Math.max(height, this.rowHeightValue), col });
+        const el = this._createSlotEl({ top, height: Math.max(height, this._rowPx), col });
         el.dataset.id = String(slot.id || '');
         el.dataset.startMinute = String(startMin);
         el.dataset.endMinute   = String(endMin);
@@ -84,12 +92,12 @@ export default class extends Controller {
     _yToMinute(y, col) {
         const rect = this._colRect(col);
         const relY = Math.max(0, y + (this.scrollEl?.scrollTop || 0) - rect.top);
-        const steps = Math.floor(relY / this.rowHeightValue);
+        const steps = Math.floor(relY / this._rowPx);
         return this.firstMinuteValue + steps * this.minuteStepValue;
     }
     _minuteToTop(minute) {
         const steps = (minute - this.firstMinuteValue) / this.minuteStepValue;
-        return steps * this.rowHeightValue;
+        return steps * this._rowPx;
     }
     _snap(minute) {
         const m0 = this.firstMinuteValue;
@@ -103,7 +111,7 @@ export default class extends Controller {
         el.style.left = '6px';
         el.style.right = '6px';
         el.style.top = `${top}px`;
-        el.style.height = `${Math.max(height, this.rowHeightValue)}px`;
+        el.style.height = `${Math.max(height, this._rowPx)}px`;
         el.dataset.role = 'slot';
         el.innerHTML = `
       <div class="slot-body" style="width:100%;height:100%;"></div>
@@ -140,6 +148,18 @@ export default class extends Controller {
     _clearSelection() {
         this.element.querySelectorAll('.slot.is-selected').forEach(n => n.classList.remove('is-selected'));
         this._selected = null;
+    }
+    _stepFromY(y, col) {
+        const rect = this._colRect(col);
+        const relY = Math.max(0, y + (this.scrollEl?.scrollTop || 0) - rect.top);
+        return Math.round(relY / this._rowPx);
+    }
+    _minuteFromStep(step) {
+        return this.firstMinuteValue + step * this.minuteStepValue;
+    }
+    _topFromMinute(minute) {
+        const step = (minute - this.firstMinuteValue) / this.minuteStepValue;
+        return step * this._rowPx;
     }
 
     // ===== Helpers API =====
@@ -231,123 +251,223 @@ export default class extends Controller {
     // ---- Drag and drop (create/drag/duplicate/resize)
     pointerDown(e) {
         if (e.button !== 0) return;
+        // focus immédiat de la grille (pour keydown Delete)
+        if (document.activeElement !== this.element) this.element.focus({ preventScroll: true });
+
         const col = e.target.closest('.mptp-col');
         const onSlot = e.target.closest('.slot');
         if (!col) return;
 
+        // Poignées resize -> drag immédiat (pas de seuil)
         const handle = e.target.closest('.slot-handle');
         if (handle && onSlot) {
             const id = onSlot.dataset.id || null;
             const colDate = col.dataset.date;
             const start = parseInt(onSlot.dataset.startMinute, 10);
             const end   = parseInt(onSlot.dataset.endMinute, 10);
-            this.active = { mode: handle.classList.contains('top') ? 'resize-top':'resize-bottom', el:onSlot, col, id, date: colDate, startMinute:start, endMinute:end, startY: e.clientY };
-            this._bindDrag(); e.preventDefault(); return;
+            this.active = {
+                mode: handle.classList.contains('top') ? 'resize-top' : 'resize-bottom',
+                el: onSlot, col, id, date: colDate,
+                startMinute: start, endMinute: end,
+                baseStartMinute: start, baseEndMinute: end,
+                baseY: e.clientY
+            };
+            this.element.classList.add('is-dragging');
+            this._bindDrag();
+            e.preventDefault();
+            return;
         }
 
+        // Clic sur slot -> on prépare un drag "pending" (seuil/long-press)
         if (onSlot) {
             const id = onSlot.dataset.id || null;
             const colDate = col.dataset.date;
             const start = parseInt(onSlot.dataset.startMinute, 10);
             const end   = parseInt(onSlot.dataset.endMinute, 10);
             const mode = e.altKey ? 'duplicate' : 'drag';
-            let el = onSlot;
-            if (mode === 'duplicate') { el = onSlot.cloneNode(true); el.dataset.id=''; onSlot.parentElement.appendChild(el); }
-            el.style.pointerEvents = 'none';
-            this.active = { mode, el, col, id, date: colDate, startMinute:start, endMinute:end, startY:e.clientY, grabOffset: e.clientY - el.getBoundingClientRect().top };
-            this._bindDrag(); e.preventDefault(); return;
+
+            this.pending = {
+                type: mode, el: onSlot, id, col, date: colDate,
+                baseStartMinute: start, baseEndMinute: end,
+                startX: e.clientX, startY: e.clientY,
+                moved: false
+            };
+
+            // long press -> active drag sans bouger
+            this.longPressTimer = setTimeout(() => {
+                if (this.pending) this._activateDragFromPending(e);
+            }, this.LONG_PRESS_MS);
+
+            this._bindDrag();
+            e.preventDefault();
+            return;
         }
 
-        // create
+        // Clic sur vide -> création "pending" (drag-create avec seuil/long-press)
         const date = col.dataset.date;
-        const m0 = this._snap(this._yToMinute(e.clientY, col));
-        const top = this._minuteToTop(m0);
-        const ghost = this._createSlotEl({ top, height: this.rowHeightValue, col });
-        ghost.classList.add('slot--ghost');
-        this.active = { mode:'create', el:ghost, col, id:null, date, startMinute:m0, endMinute:m0 + this.minuteStepValue, startY:e.clientY };
-        this._bindDrag(); e.preventDefault();
+        const step0 = this._stepFromY(e.clientY, col);
+        const m0 = this._minuteFromStep(step0);
+
+        this.pending = {
+            type: 'create',
+            col, date,
+            startStep: step0,
+            startMinute: m0,
+            startX: e.clientX, startY: e.clientY,
+            ghost: null
+        };
+
+        this.longPressTimer = setTimeout(() => {
+            if (this.pending && this.pending.type === 'create') {
+                // active sans déplacement : crée le ghost
+                const top = this._topFromMinute(m0);
+                const ghost = this._createSlotEl({ top, height: this._rowPx, col });
+                ghost.classList.add('slot--ghost');
+                this.active = {
+                    mode: 'create',
+                    el: ghost, col, id: null, date,
+                    startMinute: m0, endMinute: m0 + this.minuteStepValue,
+                    startStep: step0
+                };
+                this.pending = null;
+                this.element.classList.add('is-dragging');
+            }
+        }, this.LONG_PRESS_MS);
+
+        this._bindDrag();
+        e.preventDefault();
     }
 
     _bindDrag() { this._on(window,'pointermove', e=>this.pointerMove(e)); this._on(window,'pointerup', e=>this.pointerUp(e)); }
 
     pointerMove(e) {
-        if (!this.active) return;
-        const a = this.active;
+        // auto-scroll
         this._autoScroll(e.clientY);
 
-        if (a.mode === 'drag' || a.mode === 'duplicate') {
-            const newCol = this._colFromPoint(e.clientX, e.clientY);
-            if (newCol && newCol !== a.col) { a.col = newCol; a.date = newCol.dataset.date; newCol.appendChild(a.el); }
-            const colRect = this._colRect(a.col);
-            const desiredTop = e.clientY - colRect.top - (a.grabOffset || 0);
-            const desiredMinute = this._snap(this.firstMinuteValue + Math.round(desiredTop / this.rowHeightValue) * this.minuteStepValue);
-            const duration = a.endMinute - a.startMinute;
-            a.startMinute = desiredMinute;
-            a.endMinute   = desiredMinute + duration;
-            a.el.style.top = `${this._minuteToTop(a.startMinute)}px`;
+        // Si un drag est déjà actif -> logique existante
+        if (this.active) {
+            const a = this.active;
+            if (a.mode === 'drag' || a.mode === 'duplicate') {
+                const newCol = this._colFromPoint(e.clientX, e.clientY);
+                if (newCol && newCol !== a.col) { a.col = newCol; a.date = newCol.dataset.date; newCol.appendChild(a.el); }
+                const deltaSteps = Math.round((e.clientY - a.baseY) / this._rowPx);
+                const shift = deltaSteps * this.minuteStepValue;
+                a.startMinute = a.baseStartMinute + shift;
+                a.endMinute   = a.baseEndMinute + shift;
+                a.el.style.top = `${this._topFromMinute(a.startMinute)}px`;
+                return;
+            }
+            if (a.mode === 'create') {
+                const step = this._stepFromY(e.clientY, a.col);
+                const endMin = this._minuteFromStep(Math.max(step, a.startStep + 1));
+                a.endMinute = endMin;
+                const top = this._topFromMinute(Math.min(a.startMinute, a.endMinute - this.minuteStepValue));
+                const height = this._topFromMinute(a.endMinute) - top;
+                a.el.style.top = `${top}px`;
+                a.el.style.height = `${Math.max(height, this._rowPx)}px`;
+                return;
+            }
+            if (a.mode === 'resize-top' || a.mode === 'resize-bottom') {
+                const deltaSteps = Math.round((e.clientY - a.baseY) / this._rowPx);
+                const shift = deltaSteps * this.minuteStepValue;
+                if (a.mode === 'resize-top') {
+                    a.startMinute = Math.min(a.baseStartMinute + shift, a.baseEndMinute - this.minuteStepValue);
+                    const top = this._topFromMinute(a.startMinute);
+                    const height = this._topFromMinute(a.endMinute) - top;
+                    a.el.style.top = `${top}px`;
+                    a.el.style.height = `${Math.max(height, this._rowPx)}px`;
+                    return;
+                }
+                if (a.mode === 'resize-bottom') {
+                    a.endMinute = Math.max(a.baseEndMinute + shift, a.baseStartMinute + this.minuteStepValue);
+                    const height = this._topFromMinute(a.endMinute) - this._topFromMinute(a.startMinute);
+                    a.el.style.height = `${Math.max(height, this._rowPx)}px`;
+                    return;
+                }
+            }
             return;
         }
 
-        if (a.mode === 'create') {
-            const m = this._snap(this._yToMinute(e.clientY, a.col));
-            a.endMinute = Math.max(m, a.startMinute + this.minuteStepValue);
-            const top = this._minuteToTop(Math.min(a.startMinute, a.endMinute - this.minuteStepValue));
-            const height = this._minuteToTop(a.endMinute) - top;
-            a.el.style.top = `${top}px`; a.el.style.height = `${height}px`;
-            return;
-        }
-
-        if (a.mode === 'resize-top') {
-            const m = this._snap(this._yToMinute(e.clientY, a.col));
-            a.startMinute = Math.min(m, a.endMinute - this.minuteStepValue);
-            const top = this._minuteToTop(a.startMinute);
-            const height = this._minuteToTop(a.endMinute) - top;
-            a.el.style.top = `${top}px`; a.el.style.height = `${height}px`;
-            return;
-        }
-
-        if (a.mode === 'resize-bottom') {
-            const m = this._snap(this._yToMinute(e.clientY, a.col));
-            a.endMinute = Math.max(m, a.startMinute + this.minuteStepValue);
-            const height = this._minuteToTop(a.endMinute) - this._minuteToTop(a.startMinute);
-            a.el.style.height = `${height}px`;
+        // Si on est en "pending", on attend seuil ou long-press
+        if (this.pending) {
+            const dx = e.clientX - this.pending.startX;
+            const dy = e.clientY - this.pending.startY;
+            const dist = Math.hypot(dx, dy);
+            if (dist >= this.DRAG_THRESHOLD_PX) {
+                // seuil franchi -> active drag
+                clearTimeout(this.longPressTimer);
+                this.longPressTimer = null;
+                this._activateDragFromPending(e);
+            }
         }
     }
 
     async pointerUp(e) {
-        if (!this.active) return;
-        const a = this.active;
-        this._offAll();
-        if (a.el) a.el.style.pointerEvents = '';
-
-        if (a.mode === 'create') {
-            a.el.classList.remove('slot--ghost');
-            a.el.dataset.startMinute = String(a.startMinute);
-            a.el.dataset.endMinute   = String(a.endMinute);
-            // API
-            await this._apiCreate(a, a.el);
-            return this.active = null;
+        // stop long-press si en cours
+        if (this.longPressTimer) {
+            clearTimeout(this.longPressTimer);
+            this.longPressTimer = null;
         }
 
-        if (a.mode === 'drag') {
-            a.el.dataset.startMinute = String(a.startMinute);
-            a.el.dataset.endMinute   = String(a.endMinute);
-            await this._apiUpdate(a);
-            return this.active = null;
+        // si un drag est actif -> finalize
+        if (this.active) {
+            const a = this.active;
+            this._offAll();
+            this.element.classList.remove('is-dragging');
+            if (a.el) a.el.style.pointerEvents = '';
+
+            // changé ?
+            const changedDate = (a.date !== (a.baseDate || a.date)); // a.baseDate utilisé si tu le poses
+            const changedStart = (typeof a.baseStartMinute === 'number' && a.startMinute !== a.baseStartMinute);
+            const changedEnd   = (typeof a.baseEndMinute === 'number'   && a.endMinute   !== a.baseEndMinute);
+
+            if (a.mode === 'create') {
+                a.el.classList.remove('slot--ghost');
+                a.el.dataset.startMinute = String(a.startMinute);
+                a.el.dataset.endMinute   = String(a.endMinute);
+                await this._apiCreate(a, a.el);
+                this._select(a.el);
+                this.active = null;
+                return;
+            }
+
+            if (a.mode === 'drag' || a.mode === 'duplicate') {
+                a.el.dataset.startMinute = String(a.startMinute);
+                a.el.dataset.endMinute   = String(a.endMinute);
+                if (a.mode === 'duplicate') {
+                    await this._apiDuplicate(a, a.id);
+                } else if (changedDate || changedStart || changedEnd) {
+                    await this._apiUpdate(a);
+                }
+                this.active = null;
+                return;
+            }
+
+            if (a.mode === 'resize-top' || a.mode === 'resize-bottom') {
+                a.el.dataset.startMinute = String(a.startMinute);
+                a.el.dataset.endMinute   = String(a.endMinute);
+                if (changedStart || changedEnd) {
+                    await this._apiUpdate(a);
+                }
+                this.active = null;
+                return;
+            }
+            return;
         }
 
-        if (a.mode === 'duplicate') {
-            a.el.dataset.startMinute = String(a.startMinute);
-            a.el.dataset.endMinute   = String(a.endMinute);
-            await this._apiDuplicate(a, a.id);
-            return this.active = null;
-        }
+        // pas de drag -> c'était un clic
+        if (this.pending) {
+            this._offAll();
+            const p = this.pending;
+            this.pending = null;
 
-        if (a.mode === 'resize-top' || a.mode === 'resize-bottom') {
-            a.el.dataset.startMinute = String(a.startMinute);
-            a.el.dataset.endMinute   = String(a.endMinute);
-            await this._apiUpdate(a);
-            return this.active = null;
+            // clic sur slot => sélection
+            if (p.el) {
+                this._select(p.el);
+                return;
+            }
+            // clic sur vide => rien pour l’instant (plus tard: popup create)
+            return;
         }
     }
 
@@ -367,13 +487,21 @@ export default class extends Controller {
     }
 
     keyDown(e) {
-        // Delete / Backspace → delete
-        if (e.key === 'Delete' || e.key === 'Backspace') {
+        // Empêche les comportements par défaut gênants
+        if (e.key !== 'Delete' && e.key !== 'Escape') {
+            e.preventDefault();            // évite le scroll page
+            return;
+        }
+
+        if (e.key === 'Delete') {
             e.preventDefault();
             this._deleteSelected().catch(console.error);
+            return;
         }
-        // ESC → clear
+
+        // ESC → déselection
         if (e.key === 'Escape') {
+            e.preventDefault();
             this._clearSelection();
         }
     }
@@ -400,6 +528,43 @@ export default class extends Controller {
             if (nextSibling) parent.insertBefore(el, nextSibling);
             else parent.appendChild(el);
             this._select(el);
+        }
+    }
+
+    _activateDragFromPending(e) {
+        if (!this.pending) return;
+        const p = this.pending;
+        if (p.type === 'drag' || p.type === 'duplicate') {
+            let el = p.el;
+            if (p.type === 'duplicate') {
+                el = p.el.cloneNode(true);
+                el.dataset.id = '';
+                p.el.parentElement.appendChild(el);
+            }
+            el.style.pointerEvents = 'none';
+            this.active = {
+                mode: p.type,
+                el, col: p.col, id: p.id, date: p.date,
+                startMinute: p.baseStartMinute, endMinute: p.baseEndMinute,
+                baseStartMinute: p.baseStartMinute, baseEndMinute: p.baseEndMinute,
+                baseY: e.clientY,
+            };
+            this.pending = null;
+            this.element.classList.add('is-dragging');
+            return;
+        }
+        if (p.type === 'create') {
+            const top = this._topFromMinute(p.startMinute);
+            const ghost = this._createSlotEl({ top, height: this._rowPx, col: p.col });
+            ghost.classList.add('slot--ghost');
+            this.active = {
+                mode: 'create',
+                el: ghost, col: p.col, id: null, date: p.date,
+                startMinute: p.startMinute, endMinute: p.startMinute + this.minuteStepValue,
+                startStep: p.startStep
+            };
+            this.pending = null;
+            this.element.classList.add('is-dragging');
         }
     }
 }

@@ -92,10 +92,13 @@
     border-style: dashed;
     opacity: .7;
 }
-.mptp .slot .slot-body { cursor: grab; }
+.mptp .slot .slot-body { cursor: default; }
+.mptp .mptp-grid-body.is-dragging { cursor: move; }
 .mptp .slot .slot-body:active { cursor: grabbing; }
 
 .mptp .slot.is-selected {
-    outline: 2px solid rgba(220,53,69,.9); /* rouge bootstrap-ish */
+    outline: 2px solid rgba(220,53,69,.7); /* rouge bootstrap-ish */
     outline-offset: 0;
 }
+
+.mptp .mptp-grid-body:focus { outline: none; }
