@@ -10,6 +10,10 @@ use Symfony\Component\HttpKernel\DependencyInjection\Extension;
 
 final class MultiProjectTeamPlanningExtension extends Extension
 {
+    public function getAlias(): string
+    {
+        return 'ad2210_planning';
+    }
     public function load(array $configs, ContainerBuilder $container): void
     {
         $conf = $this->processConfiguration(new Configuration(), $configs);
@@ -21,6 +25,8 @@ final class MultiProjectTeamPlanningExtension extends Extension
 
         $container->register(PlannerOptions::class)
             ->addArgument($conf)
+            ->setAutowired(true)
+            ->setAutoconfigured(true)
             ->setPublic(false);
     }
 }
