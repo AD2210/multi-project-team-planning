@@ -15,6 +15,11 @@ final class PlannerOptions
         return $this->config['locale'] ?? 'fr_FR';
     }
 
+    public function api(): array
+    {
+        return $this->config['api'] ?? [];
+    }
+
     /** @return array merged defaults + overrides for $mode */
     public function toolbarFor(string $mode): array {
         $base = $this->config['toolbar'] ?? [];

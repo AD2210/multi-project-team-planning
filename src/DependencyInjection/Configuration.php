@@ -17,7 +17,18 @@ final class Configuration implements ConfigurationInterface
                 // --- Base ---
                 ->scalarNode('timezone')->defaultValue('Europe/Paris')->end()
                 ->scalarNode('locale')->defaultValue('fr_FR')->end()
-
+                // endpoint api
+                ->arrayNode('api')
+                    ->addDefaultsIfNotSet()
+                    ->children()
+                        ->scalarNode('create_url')->defaultNull()->end()              # ex: /api/planning/slots
+                        ->scalarNode('update_url_template')->defaultNull()->end()     # ex: /api/planning/slots/{id}
+                        ->scalarNode('duplicate_url_template')->defaultNull()->end()  # ex: /api/planning/slots/{id}/duplicate
+                        ->scalarNode('delete_url_template')->defaultNull()->end()     # ex: /api/planning/slots/{id}
+                        ->scalarNode('csrf_header')->defaultValue('X-CSRF-TOKEN')->end()
+                        ->scalarNode('csrf_token_id')->defaultNull()->end()           # ex: planning_api
+                    ->end()
+                ->end()
                 // --- Toolbar (valeurs par défaut communes) ---
                 ->arrayNode('toolbar')
                     ->addDefaultsIfNotSet()

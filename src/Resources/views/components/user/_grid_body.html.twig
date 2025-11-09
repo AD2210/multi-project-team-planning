@@ -7,6 +7,16 @@
      data-planner-grid-minute-step-value="{{ g.minute_step }}"
      data-planner-grid-row-height-value="28"
      data-planner-grid-first-minute-value="{{ rows|first.minute }}"
+     data-planner-grid-create-url-value="{{ api.create_url ?? '' }}"
+     data-planner-grid-update-url-template-value="{{ api.update_url_template ?? '' }}"
+     data-planner-grid-duplicate-url-template-value="{{ api.duplicate_url_template ?? '' }}"
+     data-planner-grid-delete-url-template-value="{{ api.delete_url_template ?? '' }}"
+     data-planner-grid-csrf-header-value="{{ api.csrf_header ?? 'X-CSRF-TOKEN' }}"
+     data-planner-grid-csrf-token-value="{{ csrf }}"
+     data-planner-grid-mode-value="{{ comp.mode }}"
+     data-planner-grid-user-id-value="{{ comp.userId ?? '' }}"
+     data-planner-grid-project-id-value="{{ comp.projectId ?? '' }}"
+     data-planner-grid-timezone-value="{{ ui.tz }}"
      style="grid-template-columns: 90px repeat({{ days|length }}, 1fr);">
 
     <div class="mptp-hours">

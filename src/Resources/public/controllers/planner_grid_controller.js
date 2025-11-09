@@ -19,6 +19,18 @@ export default class extends Controller {
         minuteStep: Number,
         rowHeight: Number,
         firstMinute: Number,
+        // API
+        createUrl: String,
+        updateUrlTemplate: String,
+        duplicateUrlTemplate: String,
+        deleteUrlTemplate: String,
+        csrfHeader: String,
+        csrfToken: String,
+        // Contexte
+        mode: String,        // 'user' | 'project'
+        userId: String,
+        projectId: String,
+        timezone: String
     };
 
     connect() {
@@ -72,110 +84,140 @@ export default class extends Controller {
     }
     _on = (el, ev, cb) => { el.addEventListener(ev, cb); this._binders.push(()=>el.removeEventListener(ev, cb)); };
     _offAll = () => { while (this._binders.length) this._binders.pop()(); };
+    _colFromPoint(clientX, clientY) {
+        // pendant le drag on met pointer-events:none sur le slot pour pouvoir "voir" la colonne
+        const el = document.elementFromPoint(clientX, clientY);
+        return el ? el.closest('.mptp-col') : null;
+    }
+    _autoScroll(clientY) {
+        if (!this.scrollEl) return;
+        const rect = this.scrollEl.getBoundingClientRect();
+        const pad = 30;         // zone sensible
+        const step = 24;        // pixels de scroll par tick
+        if (clientY < rect.top + pad)  this.scrollEl.scrollTop -= step;
+        if (clientY > rect.bottom - pad) this.scrollEl.scrollTop += step;
+    }
 
-    // ---- creation à la volée
+    // ===== Helpers API =====
+    _headers() {
+        const h = { 'Content-Type': 'application/json', 'Accept': 'application/json' };
+        if (this.csrfTokenValue) h[this.csrfHeaderValue || 'X-CSRF-TOKEN'] = this.csrfTokenValue;
+        return h;
+    }
+    // 'YYYY-MM-DDTHH:MM:SS' en local + timezone séparée
+    _composeLocalDateTime(dateYmd, minute) {
+        const hh = String(Math.floor(minute / 60)).padStart(2,'0');
+        const mm = String(minute % 60).padStart(2,'0');
+        return `${dateYmd}T${hh}:${mm}:00`;
+    }
+    _basePayload(a) {
+        const p = {
+            start_at: this._composeLocalDateTime(a.date, a.startMinute),
+            end_at:   this._composeLocalDateTime(a.date, a.endMinute),
+            timezone: this.timezoneValue || 'Europe/Paris'
+        };
+        if (this.modeValue === 'user' && this.userIdValue)    p.user_id = this.userIdValue;
+        if (this.modeValue === 'project' && this.projectIdValue) p.project_id = this.projectIdValue;
+        return p;
+    }
+    _urlWithId(tpl, id) {
+        if (!tpl) return '';
+        return tpl.replace('{id}', id).replace(':id', id);
+    }
+
+    async _apiCreate(a, elForId) {
+        if (!this.createUrlValue) return;
+        const res = await fetch(this.createUrlValue, { method: 'POST', headers: this._headers(), body: JSON.stringify(this._basePayload(a)) });
+        if (!res.ok) { console.error('Create failed', await res.text()); return; }
+        const json = await res.json().catch(()=>({}));
+        if (json && json.id && elForId) elForId.dataset.id = String(json.id);
+    }
+    async _apiUpdate(a) {
+        const id = a.id || a.el?.dataset?.id;
+        const url = this._urlWithId(this.updateUrlTemplateValue, id);
+        if (!id || !url) return;
+        const res = await fetch(url, { method: 'PUT', headers: this._headers(), body: JSON.stringify(this._basePayload(a)) });
+        if (!res.ok) { console.error('Update failed', await res.text()); }
+    }
+    async _apiDuplicate(a, fromId) {
+        const url = this._urlWithId(this.duplicateUrlTemplateValue, fromId);
+        if (url) {
+            const res = await fetch(url, { method: 'POST', headers: this._headers(), body: JSON.stringify(this._basePayload(a)) });
+            if (!res.ok) { console.error('Duplicate failed', await res.text()); return; }
+            const json = await res.json().catch(()=>({}));
+            if (json && json.id && a.el) a.el.dataset.id = String(json.id);
+        } else if (this.createUrlValue) {
+            // fallback: pas de route duplicate => on fait un create
+            await this._apiCreate(a, a.el);
+        }
+    }
+
+    // ---- Drag and drop (create/drag/duplicate/resize)
     pointerDown(e) {
-        if (e.button !== 0) return; // click gauche
+        if (e.button !== 0) return;
         const col = e.target.closest('.mptp-col');
         const onSlot = e.target.closest('.slot');
         if (!col) return;
 
-        // Resize handles ?
         const handle = e.target.closest('.slot-handle');
         if (handle && onSlot) {
             const id = onSlot.dataset.id || null;
             const colDate = col.dataset.date;
             const start = parseInt(onSlot.dataset.startMinute, 10);
             const end   = parseInt(onSlot.dataset.endMinute, 10);
-            this.active = {
-                mode: handle.classList.contains('top') ? 'resize-top' : 'resize-bottom',
-                el: onSlot, col, id, date: colDate, startMinute: start, endMinute: end, startY: e.clientY
-            };
-            this._bindDrag();
-            e.preventDefault();
-            return;
+            this.active = { mode: handle.classList.contains('top') ? 'resize-top':'resize-bottom', el:onSlot, col, id, date: colDate, startMinute:start, endMinute:end, startY: e.clientY };
+            this._bindDrag(); e.preventDefault(); return;
         }
 
-        // Drag slot ?
         if (onSlot) {
             const id = onSlot.dataset.id || null;
             const colDate = col.dataset.date;
             const start = parseInt(onSlot.dataset.startMinute, 10);
             const end   = parseInt(onSlot.dataset.endMinute, 10);
             const mode = e.altKey ? 'duplicate' : 'drag';
-            // pour duplicate: cloner immédiatement l’élément
             let el = onSlot;
-            if (mode === 'duplicate') {
-                el = onSlot.cloneNode(true);
-                el.dataset.id = ''; // nouveau
-                onSlot.parentElement.appendChild(el);
-            }
-            // désactive le hit-test sur le slot pendant le drag
+            if (mode === 'duplicate') { el = onSlot.cloneNode(true); el.dataset.id=''; onSlot.parentElement.appendChild(el); }
             el.style.pointerEvents = 'none';
-
-            this.active = { mode, el, col, id, date: colDate, startMinute: start, endMinute: end, startY: e.clientY, grabOffset: e.clientY - el.getBoundingClientRect().top };
-            this._bindDrag();
-            e.preventDefault();
-            return;
+            this.active = { mode, el, col, id, date: colDate, startMinute:start, endMinute:end, startY:e.clientY, grabOffset: e.clientY - el.getBoundingClientRect().top };
+            this._bindDrag(); e.preventDefault(); return;
         }
 
-        // Création d’un nouveau slot
+        // create
         const date = col.dataset.date;
-        const m0 = this._yToMinute(e.clientY, col);
+        const m0 = this._snap(this._yToMinute(e.clientY, col));
         const top = this._minuteToTop(m0);
         const ghost = this._createSlotEl({ top, height: this.rowHeightValue, col });
         ghost.classList.add('slot--ghost');
-
-        this.active = { mode: 'create', el: ghost, col, id: null, date, startMinute: m0, endMinute: m0 + this.minuteStepValue, startY: e.clientY };
-        this._bindDrag();
-        e.preventDefault();
+        this.active = { mode:'create', el:ghost, col, id:null, date, startMinute:m0, endMinute:m0 + this.minuteStepValue, startY:e.clientY };
+        this._bindDrag(); e.preventDefault();
     }
 
-    _bindDrag() {
-        const move = (ev) => this.pointerMove(ev);
-        const up   = (ev) => this.pointerUp(ev);
-        this._on(window, 'pointermove', move);
-        this._on(window, 'pointerup', up);
-    }
+    _bindDrag() { this._on(window,'pointermove', e=>this.pointerMove(e)); this._on(window,'pointerup', e=>this.pointerUp(e)); }
 
     pointerMove(e) {
         if (!this.active) return;
         const a = this.active;
-
-        // auto-scroll pendant le drag
         this._autoScroll(e.clientY);
+
+        if (a.mode === 'drag' || a.mode === 'duplicate') {
+            const newCol = this._colFromPoint(e.clientX, e.clientY);
+            if (newCol && newCol !== a.col) { a.col = newCol; a.date = newCol.dataset.date; newCol.appendChild(a.el); }
+            const colRect = this._colRect(a.col);
+            const desiredTop = e.clientY - colRect.top - (a.grabOffset || 0);
+            const desiredMinute = this._snap(this.firstMinuteValue + Math.round(desiredTop / this.rowHeightValue) * this.minuteStepValue);
+            const duration = a.endMinute - a.startMinute;
+            a.startMinute = desiredMinute;
+            a.endMinute   = desiredMinute + duration;
+            a.el.style.top = `${this._minuteToTop(a.startMinute)}px`;
+            return;
+        }
 
         if (a.mode === 'create') {
             const m = this._snap(this._yToMinute(e.clientY, a.col));
             a.endMinute = Math.max(m, a.startMinute + this.minuteStepValue);
             const top = this._minuteToTop(Math.min(a.startMinute, a.endMinute - this.minuteStepValue));
             const height = this._minuteToTop(a.endMinute) - top;
-            a.el.style.top = `${top}px`;
-            a.el.style.height = `${height}px`;
-        }
-
-
-        if (a.mode === 'drag' || a.mode === 'duplicate') {
-            // 1) détecter la colonne sous le pointeur
-            const newCol = this._colFromPoint(e.clientX, e.clientY);
-            if (newCol && newCol !== a.col) {
-                a.col = newCol;
-                a.date = newCol.dataset.date;
-                newCol.appendChild(a.el); // re-parenting dans la nouvelle colonne
-            }
-
-            // 2) recalcule le top à partir du grabOffset pour garder l'impression de continuité
-            const colRect = this._colRect(a.col);
-            const desiredTop = e.clientY - colRect.top - (a.grabOffset || 0);
-            const desiredMinute = this._snap(
-                this.firstMinuteValue + Math.round(desiredTop / this.rowHeightValue) * this.minuteStepValue
-            );
-
-            const duration = a.endMinute - a.startMinute;
-            a.startMinute = desiredMinute;
-            a.endMinute   = desiredMinute + duration;
-
-            a.el.style.top = `${this._minuteToTop(a.startMinute)}px`;
+            a.el.style.top = `${top}px`; a.el.style.height = `${height}px`;
             return;
         }
 
@@ -184,8 +226,8 @@ export default class extends Controller {
             a.startMinute = Math.min(m, a.endMinute - this.minuteStepValue);
             const top = this._minuteToTop(a.startMinute);
             const height = this._minuteToTop(a.endMinute) - top;
-            a.el.style.top = `${top}px`;
-            a.el.style.height = `${height}px`;
+            a.el.style.top = `${top}px`; a.el.style.height = `${height}px`;
+            return;
         }
 
         if (a.mode === 'resize-bottom') {
@@ -196,58 +238,40 @@ export default class extends Controller {
         }
     }
 
-    pointerUp(e) {
+    async pointerUp(e) {
         if (!this.active) return;
         const a = this.active;
         this._offAll();
-
-        // réactive le hit-test du slot
         if (a.el) a.el.style.pointerEvents = '';
 
-        // persister/émettre l’action
         if (a.mode === 'create') {
             a.el.classList.remove('slot--ghost');
-            // dataset pour prochains drags
             a.el.dataset.startMinute = String(a.startMinute);
             a.el.dataset.endMinute   = String(a.endMinute);
-            a.el.dataset.id          = a.el.dataset.id || '';
-            this._emit('planner:create', { date: a.date, startMinute: a.startMinute, endMinute: a.endMinute });
+            // API
+            await this._apiCreate(a, a.el);
+            return this.active = null;
         }
 
         if (a.mode === 'drag') {
             a.el.dataset.startMinute = String(a.startMinute);
             a.el.dataset.endMinute   = String(a.endMinute);
-            this._emit('planner:update', { id: a.id, date: a.date, startMinute: a.startMinute, endMinute: a.endMinute });
+            await this._apiUpdate(a);
+            return this.active = null;
         }
+
         if (a.mode === 'duplicate') {
             a.el.dataset.startMinute = String(a.startMinute);
             a.el.dataset.endMinute   = String(a.endMinute);
-            a.el.dataset.id = '';
-            this._emit('planner:duplicate', { fromId: a.id, date: a.date, startMinute: a.startMinute, endMinute: a.endMinute });
+            await this._apiDuplicate(a, a.id);
+            return this.active = null;
         }
 
         if (a.mode === 'resize-top' || a.mode === 'resize-bottom') {
             a.el.dataset.startMinute = String(a.startMinute);
             a.el.dataset.endMinute   = String(a.endMinute);
-            this._emit('planner:update', { id: a.id, date: a.date, startMinute: a.startMinute, endMinute: a.endMinute });
+            await this._apiUpdate(a);
+            return this.active = null;
         }
-
-        this.active = null;
-    }
-    // trouve la colonne jour sous le pointeur (en tenant compte du scroll)
-    _colFromPoint(clientX, clientY) {
-        // pendant le drag on met pointer-events:none sur le slot pour pouvoir "voir" la colonne
-        const el = document.elementFromPoint(clientX, clientY);
-        return el ? el.closest('.mptp-col') : null;
-    }
-
-    // auto-scroll quand on approche du bord du viewport de la grille
-    _autoScroll(clientY) {
-        if (!this.scrollEl) return;
-        const rect = this.scrollEl.getBoundingClientRect();
-        const pad = 30;         // zone sensible
-        const step = 24;        // pixels de scroll par tick
-        if (clientY < rect.top + pad)  this.scrollEl.scrollTop -= step;
-        if (clientY > rect.bottom - pad) this.scrollEl.scrollTop += step;
     }
 }
