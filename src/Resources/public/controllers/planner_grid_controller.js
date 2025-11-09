@@ -80,11 +80,19 @@ export default class extends Controller {
         el.dataset.id = String(slot.id || '');
         el.dataset.startMinute = String(startMin);
         el.dataset.endMinute   = String(endMin);
-        el.title = slot.title || '';
-        if (slot.color) {
-            el.style.background = slot.color;
-            el.style.borderColor = slot.color;
+
+        // infos UI facultatives
+        if (slot.title) {
+            el.dataset.title = slot.title;
+            const t = el.querySelector('.slot-title'); if (t) t.textContent = slot.title;
         }
+        if (slot.status) {
+            el.dataset.status = slot.status;
+            const bdg = el.querySelector('.slot-badge');
+            if (bdg) { bdg.textContent = slot.status; bdg.classList.remove('d-none'); }
+        }
+        if (slot.user_label) el.dataset.userLabel = slot.user_label;
+        if (slot.project_label) el.dataset.projectLabel = slot.project_label;
     }
     _colRect(col) {
         const r = col.getBoundingClientRect();
@@ -109,17 +117,21 @@ export default class extends Controller {
     _createSlotEl({ top, height, col }) {
         const el = document.createElement('div');
         el.className = 'slot';
-        el.style.position = 'absolute';
-        el.style.left = '6px';
-        el.style.right = '6px';
         el.style.top = `${top}px`;
-        el.style.height = `${Math.max(height, this._rowPx)}px`;
-        el.dataset.role = 'slot';
-        el.innerHTML = `
-      <div class="slot-body" style="width:100%;height:100%;"></div>
-      <div class="slot-handle top" style="position:absolute;left:0;right:0;top:-4px;height:8px;cursor:ns-resize;"></div>
-      <div class="slot-handle bottom" style="position:absolute;left:0;right:0;bottom:-4px;height:8px;cursor:ns-resize;"></div>
-    `;
+        el.style.height = `${height}px`;
+
+        // handles resize déjà existants (garde ton code)
+        const t = document.createElement('div'); t.className = 'slot-handle top';
+        const b = document.createElement('div'); b.className = 'slot-handle bottom';
+        el.appendChild(t); el.appendChild(b);
+
+        // corps (titre + badge)
+        const body = document.createElement('div');
+        body.className = 'slot-body';
+        // si dataset.title est défini plus tard, on le remplira
+        body.innerHTML = `<strong class="slot-title"></strong> <span class="badge bg-secondary slot-badge d-none"></span>`;
+        el.appendChild(body);
+
         col.appendChild(el);
         return el;
     }
@@ -127,7 +139,6 @@ export default class extends Controller {
         this.element.dispatchEvent(new CustomEvent(name, { bubbles: true, detail }));
     }
     _on = (el, ev, cb) => { el.addEventListener(ev, cb); this._binders.push(()=>el.removeEventListener(ev, cb)); }
-
     _offAll() {
         if (this._dragBound) {
             document.removeEventListener('pointermove', this._onMove);
@@ -354,7 +365,6 @@ export default class extends Controller {
         this._bindDrag();
         e.preventDefault();
     }
-
     _bindDrag() {
         if (this._dragBound) return;
         this._onMove = (e) => this.pointerMove(e);
@@ -365,7 +375,6 @@ export default class extends Controller {
 
         this._dragBound = true;
     }
-
     pointerMove(e) {
         // auto-scroll
         this._autoScroll(e.clientY);
@@ -431,7 +440,6 @@ export default class extends Controller {
             }
         }
     }
-
     async pointerUp(e) {
         // stop long-press si en cours
         if (this.longPressTimer) {
@@ -503,7 +511,6 @@ export default class extends Controller {
             return;
         }
     }
-
     updateContext(event) {
         const { userId, projectId } = event.detail || {};
         if (typeof userId !== 'undefined')   this.userIdValue = String(userId);
@@ -518,7 +525,40 @@ export default class extends Controller {
         if (!slot) { this._clearSelection(); return; }
         this._select(slot);
     }
+    openDetail(e) {
+        const slot = e.target.closest('.slot');
+        if (!slot) { this._clearSelection(); return; }
 
+        this._select(slot);
+
+        // Datas pour le modal
+        const id = slot.dataset.id || '';
+        const col = slot.closest('.mptp-col');
+        const ymd = col?.dataset.date || '';
+        const startMin = parseInt(slot.dataset.startMinute || '0', 10);
+        const endMin   = parseInt(slot.dataset.endMinute   || '0', 10);
+
+        const startIso = `${ymd}T${this._fmtMinute(startMin)}:00`;
+        const endIso   = `${ymd}T${this._fmtMinute(endMin)}:00`;
+
+        // URL update pour ce slot
+        const upd = this._urlWithId(this.updateUrlTemplateValue, id);
+
+        // récupérer quelques étiquettes (si tu les stockes en data-* sur le slot)
+        const title = slot.dataset.title || '';
+        const userLabel = slot.dataset.userLabel || '';
+        const projectLabel = slot.dataset.projectLabel || '';
+        const status = slot.dataset.status || '';
+
+        window.dispatchEvent(new CustomEvent('planner-grid:open-detail', {
+            detail: {
+                id, title, start_at: startIso, end_at: endIso,
+                user_id: this.userIdValue || '', project_id: this.projectIdValue || '',
+                user_label: userLabel, project_label: projectLabel, status,
+                updateUrl: upd, mode: this.modeValue
+            }
+        }));
+    }
     keyDown(e) {
         // Empêche les comportements par défaut gênants
         if (e.key !== 'Delete' && e.key !== 'Escape' && e.key !== 'F5' && e.key !== 'Control') {
@@ -563,7 +603,6 @@ export default class extends Controller {
             this._select(el);
         }
     }
-
     _activateDragFromPending(e) {
         if (!this.pending) return;
         const p = this.pending;

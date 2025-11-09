@@ -1,0 +1,67 @@
+<div class="modal fade" tabindex="-1"
+     id="mptpDetailModal"
+     data-controller="planner-detail"
+     data-action="planner-grid:open-detail@window->planner-detail#open">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" data-planner-detail-target="title">Détail du créneau</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+            </div>
+
+            <div class="modal-body">
+                <dl class="row mb-0" data-planner-detail-target="viewBlock">
+                    <dt class="col-4">Plage</dt>
+                    <dd class="col-8"><span data-planner-detail-target="range"></span></dd>
+
+                    <dt class="col-4">Utilisateur</dt>
+                    <dd class="col-8"><span data-planner-detail-target="user"></span></dd>
+
+                    <dt class="col-4">Projet</dt>
+                    <dd class="col-8"><span data-planner-detail-target="project"></span></dd>
+
+                    <dt class="col-4">Statut</dt>
+                    <dd class="col-8"><span class="badge text-bg-secondary" data-planner-detail-target="status"></span></dd>
+                </dl>
+
+                <form class="d-none" data-planner-detail-target="formBlock"
+                      data-planner-detail-target="form"
+                      autocomplete="off">
+                    <div class="mb-3">
+                        <label class="form-label">Titre</label>
+                        <input type="text" class="form-control" data-planner-detail-target="titleInput">
+                    </div>
+                    <div class="row g-2">
+                        <div class="col">
+                            <label class="form-label">Début</label>
+                            <input type="datetime-local" class="form-control" data-planner-detail-target="startInput">
+                        </div>
+                        <div class="col">
+                            <label class="form-label">Fin</label>
+                            <input type="datetime-local" class="form-control" data-planner-detail-target="endInput">
+                        </div>
+                    </div>
+                    <div class="row g-2 mt-2">
+                        <div class="col">
+                            <label class="form-label">Utilisateur</label>
+                            <input type="text" class="form-control" data-planner-detail-target="userInput" placeholder="ID user">
+                        </div>
+                        <div class="col">
+                            <label class="form-label">Projet</label>
+                            <input type="text" class="form-control" data-planner-detail-target="projectInput" placeholder="ID projet">
+                        </div>
+                    </div>
+                </form>
+
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Fermer</button>
+                <button type="button" class="btn btn-outline-primary" data-planner-detail-target="editBtn"
+                        data-action="planner-detail#enterEdit">Modifier</button>
+                <button type="button" class="btn btn-primary d-none" data-planner-detail-target="saveBtn"
+                        data-action="planner-detail#save">Enregistrer</button>
+            </div>
+        </div>
+    </div>
+</div>
