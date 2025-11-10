@@ -42,8 +42,8 @@ final class MptpInstallCommand extends Command
         $srcBase = \dirname(__DIR__, 2);
         $map = [
             'config/packages/mptp_asset_mapper.yaml' => $srcBase.'/config/packages/mptp_asset_mapper.yaml',
-            'config/packages/ad2210_planning.yaml'   => $srcBase.'/config/packages/ad2210_planning.yaml',
-            'config/routes/ad2210_planning.yaml'     => $srcBase.'/config/routes/ad2210_planning.yaml',
+            'config/packages/ad2210_mptp.yaml'   => $srcBase.'/config/packages/ad2210_mptp.yaml',
+            'config/routes/ad2210_mptp.yaml'     => $srcBase.'/config/routes/ad2210_mptp.yaml',
         ];
         foreach ($map as $rel => $src) {
             $dst = $root.'/'.$rel;
