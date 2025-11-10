@@ -46,25 +46,22 @@ final class MptpMakeDemoCommand extends Command
     private function renderTwig(): string
     {
         return <<<'TWIG'
-{% extends 'base.html.twig' %}
+{% extends "base.html.twig" %}
 {% block title %}Planning{% endblock %}
+{% block stylesheets %}
+    {{ parent() }}
+{% endblock %}
 {% block body %}
-  <div class="container py-3 mptp">
-    {% include '@MultiProjectTeamPlanning/components/planner_user_view.html.twig' with { comp: { mode: 'user', userId: 1, projectId: null } } %}
-    {% include '@MultiProjectTeamPlanning/components/user/_detail_modal.html.twig' %}
-  </div>
+    {{ component('planner_user_view', {
+        mode: 'user',
+        userId: 1,
+        period: 'week',
+        anchor: 'today'
+    }) }}
+{% endblock %}
 
-  {# Stimulus: enregistrement des contrôleurs du bundle #}
-  <script type="module">
-    import { Application } from "https://unpkg.com/@hotwired/stimulus/dist/stimulus.js";
-    import PlannerGrid    from "{{ asset('bundles/multiprojectteamplanning/controllers/planner_grid_controller.js') }}";
-    import PlannerToolbar from "{{ asset('bundles/multiprojectteamplanning/controllers/planner_toolbar_controller.js') }}";
-    import PlannerDetail  from "{{ asset('bundles/multiprojectteamplanning/controllers/planner_detail_controller.js') }}";
-    window.Stimulus = window.Stimulus || Application.start();
-    window.Stimulus.register('planner-grid', PlannerGrid);
-    window.Stimulus.register('planner-toolbar', PlannerToolbar);
-    window.Stimulus.register('planner-detail', PlannerDetail);
-  </script>
+{% block javascripts %}
+    {{ parent() }}
 {% endblock %}
 TWIG;
     }

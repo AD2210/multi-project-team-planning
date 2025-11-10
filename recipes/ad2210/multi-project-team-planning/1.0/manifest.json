@@ -4,6 +4,7 @@
       "Ad2210\\\\MultiProjectTeamPlanning\\\\MultiProjectTeamPlanningBundle": ["all"]
     },
     "copy-from-recipe": {
+      "config/packages/mptp_asset_mapper.yaml": "config/packages/mptp_asset_mapper.yaml",
       "config/packages/ad2210_mptp.yaml": "config/packages/ad2210_mptp.yaml",
       "config/routes/ad2210_mptp.yaml": "config/routes/ad2210_mptp.yaml",
       "config/services/ad2210_mptp.yaml": "config/services/ad2210_mptp.yaml"
