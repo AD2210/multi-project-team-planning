@@ -29,4 +29,20 @@ final class MultiProjectTeamPlanningExtension extends Extension
             ->setAutoconfigured(true)
             ->setPublic(false);
     }
+
+    public function prepend(ContainerBuilder $container): void
+    {
+        if ($container->hasExtension('framework')) {
+            $projectDir = $container->getParameter('kernel.project_dir');
+
+            $container->prependExtensionConfig('framework', [
+                'asset_mapper' => [
+                    'paths' => [
+                        // rend disponible @mptp/… depuis vendor
+                        $projectDir.'/vendor/ad2210/multi-project-team-planning/assets' => '@mptp',
+                    ],
+                ],
+            ]);
+        }
+    }
 }

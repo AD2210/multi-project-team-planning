@@ -56,54 +56,20 @@ final class MptpInstallCommand extends Command
             $io->success("Installé: $rel");
         }
 
-        // 2) Stimulus auto-discover: merge assets/controllers.json
-        $controllersFile = $root.'/assets/controllers.json';
-        $wanted = [
-            'planner-grid' => [
-                'enabled' => true, 'fetch' => 'eager',
-                'path' => '@mptp/controllers/planner_grid_controller.js',
-            ],
-            'planner-toolbar' => [
-                'enabled' => true, 'fetch' => 'eager',
-                'path' => '@mptp/controllers/planner_toolbar_controller.js',
-            ],
-            'planner-detail' => [
-                'enabled' => true, 'fetch' => 'eager',
-                'path' => '@mptp/controllers/planner_detail_controller.js',
-            ],
-        ];
-        $merged = false;
-        if ($this->fs->exists($controllersFile)) {
-            $json = json_decode((string) file_get_contents($controllersFile), true) ?: [];
-            $json['controllers'] = $json['controllers'] ?? [];
-            foreach ($wanted as $name => $cfg) {
-                $json['controllers'][$name] = $cfg; // override/ensure
-            }
-            $this->fs->dumpFile($controllersFile, json_encode($json, JSON_PRETTY_PRINT|JSON_UNESCAPED_SLASHES));
-            $merged = true;
-            $io->success('Stimulus controllers.json fusionné');
-        } else {
-            $this->fs->mkdir($root.'/assets');
-            $json = ['controllers' => $wanted];
-            $this->fs->dumpFile($controllersFile, json_encode($json, JSON_PRETTY_PRINT|JSON_UNESCAPED_SLASHES));
-            $merged = true;
-            $io->success('Stimulus controllers.json créé');
-        }
-
         // 3) S’assurer des fichiers JS de bootstrap Stimulus
         $bootstrapJs = $root.'/assets/bootstrap.js';
         if (!$this->fs->exists($bootstrapJs)) {
             $this->fs->dumpFile($bootstrapJs, <<<JS
-import { Application } from "@hotwired/stimulus";
-window.Stimulus = window.Stimulus || Application.start();
-JS);
+                import { Application } from "@hotwired/stimulus";
+                window.Stimulus = window.Stimulus || Application.start();
+            JS);
             $io->success('assets/bootstrap.js créé');
         }
         $appJs = $root.'/assets/app.js';
         if (!$this->fs->exists($appJs)) {
             $this->fs->dumpFile($appJs, <<<JS
-import "./bootstrap.js";
-JS);
+                import "./bootstrap.js";
+            JS);
             $io->success('assets/app.js créé');
         } else {
             // garantir import "./bootstrap.js";
@@ -135,12 +101,12 @@ JS);
             $appCss = $stylesDir.'/app.css';
             if (!$this->fs->exists($appCss)) {
                 $this->fs->dumpFile($appCss, <<<CSS
-/* Bootstrap CSS via CDN ou via ton thème */
-@import url("https://cdn.jsdelivr.net/npm/bootstrap@5/dist/css/bootstrap.min.css");
-
-/* CSS du bundle MPTP (via AssetMapper alias @mptp) */
-@import "@mptp/styles/planner.css";
-CSS);
+                    /* Bootstrap CSS via CDN ou via ton thème */
+                    @import url("https://cdn.jsdelivr.net/npm/bootstrap@5/dist/css/bootstrap.min.css");
+                    
+                    /* CSS du bundle MPTP (via AssetMapper alias @mptp) */
+                    @import "@mptp/styles/planner.css";
+                CSS);
                 $io->success('assets/styles/app.css créé');
             } else {
                 $css = (string) file_get_contents($appCss);
