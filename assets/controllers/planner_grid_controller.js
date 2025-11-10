@@ -1,4 +1,4 @@
-import { Controller } from "https://unpkg.com/@hotwired/stimulus/dist/stimulus.js";
+import { Controller } from '@hotwired/stimulus';
 
 /**
  * Interactions planner:

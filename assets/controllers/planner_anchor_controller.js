@@ -1,5 +1,4 @@
-// Contrôle l'ancre de date (date picker de la toolbar)
-import { Controller } from "https://unpkg.com/@hotwired/stimulus/dist/stimulus.js";
+import { Controller } from '@hotwired/stimulus';
 
 export default class extends Controller {
     static targets = ["toolbar"];

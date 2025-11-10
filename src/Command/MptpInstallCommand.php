@@ -1,140 +1,107 @@
 <?php
-declare(strict_types=1);
 
 namespace Ad2210\MultiProjectTeamPlanning\Command;
 
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
-use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
-use Symfony\Component\Console\Style\SymfonyStyle;
 use Symfony\Component\Filesystem\Filesystem;
-use Symfony\Component\HttpKernel\KernelInterface;
-use Symfony\Component\Process\Process;
+use Symfony\Component\Finder\Finder;
 
-#[AsCommand(
-    name: 'mptp:install',
-    description: 'Installe/merge la config, Stimulus controllers, AssetMapper & Bootstrap dans l’app hôte'
-)]
-final class MptpInstallCommand extends Command
+#[AsCommand(name: 'mptp:install', description: 'Installe les fichiers de base pour le bundle MultiProjectTeamPlanning')]
+class MptpInstallCommand extends Command
 {
     public function __construct(
-        private readonly KernelInterface $kernel,
-        private readonly Filesystem $fs = new Filesystem(),
-    ) { parent::__construct(); }
-
-    protected function configure(): void
-    {
-        $this
-            ->addOption('force', 'f', InputOption::VALUE_NONE, 'Écraser les fichiers existants')
-            ->addOption('no-bootstrap', null, InputOption::VALUE_NONE, 'Ne pas installer Bootstrap via importmap')
-            ->addOption('no-css', null, InputOption::VALUE_NONE, 'Ne pas créer/patcher styles/app.css');
+        private readonly string $projectDir
+    ) {
+        parent::__construct();
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        $io    = new SymfonyStyle($input, $output);
-        $root  = $this->kernel->getProjectDir();
-        $force = (bool) $input->getOption('force');
+        $filesystem = new Filesystem();
 
-        // 1) Copier les configs
-        $srcBase = \dirname(__DIR__, 2);
-        $map = [
-            'config/packages/mptp_asset_mapper.yaml' => $srcBase.'/config/packages/mptp_asset_mapper.yaml',
-            'config/packages/ad2210_mptp.yaml'   => $srcBase.'/config/packages/ad2210_mptp.yaml',
-            'config/routes/ad2210_mptp.yaml'     => $srcBase.'/config/routes/ad2210_mptp.yaml',
-        ];
-        foreach ($map as $rel => $src) {
-            $dst = $root.'/'.$rel;
-            if ($this->fs->exists($dst) && !$force) {
-                $io->text("• Existe déjà (skip): $rel");
-                continue;
+        // Répertoires
+        $assetsDir = $this->projectDir . '/assets';
+        $stylesDir = $assetsDir . '/styles';
+        $controllersDir = $assetsDir . '/controllers';
+        $configDir = $this->projectDir . '/config/packages';
+
+        // Créer les répertoires si besoin
+        $filesystem->mkdir([$stylesDir, $controllersDir]);
+
+        // Fichiers source depuis le bundle
+        $sourceBaseDir = __DIR__ . '/../../Resources/install';
+        $sourceConfigDir = __DIR__ . '/../config';
+
+        $output->writeln('➔️  Fusion des fichiers JS et CSS');
+        $this->mergeFile($sourceBaseDir . '/app.js', $assetsDir . '/app.js');
+        $this->mergeFile($sourceBaseDir . '/app.css', $stylesDir . '/app.css');
+        $this->mergeFile($sourceBaseDir . '/stimulus_bootstrap.js', $assetsDir . '/stimulus_bootstrap.js');
+
+        $output->writeln('➔️  Copie/Patch des fichiers de config YAML');
+        $filesystem->copy($sourceConfigDir . '/package/ad2210_mptp.yaml', $configDir . '/ad2210_mptp.yaml', true);
+        $this->mergeFile($sourceConfigDir . '/package/asset_mapper.yaml', $configDir . '/asset_mapper.yaml');
+
+        $output->writeln('➔️  Patch du fichier importmap.php');
+        $importmapPath = $this->projectDir . '/importmap.php';
+        if ($filesystem->exists($importmapPath)) {
+            $importmap = include $importmapPath;
+
+            $entries = [
+                '@mptp/planner_grid_controller' => ['path' => 'mptp/controllers/planner_grid_controller.js'],
+                '@mptp/planner_toolbar_controller' => ['path' => 'mptp/controllers/planner_toolbar_controller.js'],
+                '@mptp/planner_detail_controller' => ['path' => 'mptp/controllers/planner_detail_controller.js'],
+                '@mptp/planner_controller' => ['path' => 'mptp/controllers/planner_controller.js'],
+                '@mptp/planner_anchor_controller' => ['path' => 'mptp/controllers/planner_anchor_controller.js'],
+                '@mptp/planner' => ['path' => 'mptp/styles/planner.css'],
+                'bootstrap' => ['url' => 'https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.esm.min.js'],
+                '@popperjs/core' => ['url' => 'https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/esm/index.js'],
+                'bootstrap/dist/css/bootstrap.min.css' => ['url' => 'https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css'],
+            ];
+
+            foreach ($entries as $key => $value) {
+                if (!array_key_exists($key, $importmap)) {
+                    $importmap[$key] = $value;
+                }
             }
-            $this->fs->mkdir(\dirname($dst));
-            $this->fs->copy($src, $dst, true);
-            $io->success("Installé: $rel");
-        }
 
-        // 3) S’assurer des fichiers JS de bootstrap Stimulus
-        $bootstrapJs = $root.'/assets/bootstrap.js';
-        if (!$this->fs->exists($bootstrapJs)) {
-            $this->fs->dumpFile($bootstrapJs, <<<JS
-                import { Application } from "@hotwired/stimulus";
-                window.Stimulus = window.Stimulus || Application.start();
-            JS);
-            $io->success('assets/bootstrap.js créé');
-        }
-        $appJs = $root.'/assets/app.js';
-        if (!$this->fs->exists($appJs)) {
-            $this->fs->dumpFile($appJs, <<<JS
-                import "./bootstrap.js";
-            JS);
-            $io->success('assets/app.js créé');
+            // Écriture sécurisée : on filtre les doublons exacts et on conserve l'ordre existant
+            $newContent = '<?php
+
+return ' . var_export($importmap, true) . ';';
+
+            if (!str_contains(file_get_contents($importmapPath), $newContent)) {
+                file_put_contents($importmapPath, $newContent);
+            }
         } else {
-            // garantir import "./bootstrap.js";
-            $content = (string) file_get_contents($appJs);
-            if (!str_contains($content, 'import "./bootstrap.js"')) {
-                $content = "import \"./bootstrap.js\";\n".$content;
-                $this->fs->dumpFile($appJs, $content);
-                $io->success('assets/app.js patché (import "./bootstrap.js")');
-            }
+            $output->writeln('<error>Fichier importmap.php introuvable</error>');
         }
 
-        // 4) Bootstrap via importmap (JS) + CSS
-        if (!$input->getOption('no-bootstrap')) {
-            $this->runCmd($io, ['php','bin/console','importmap:require','bootstrap','@popperjs/core'], $root, 'Importmap Bootstrap/Popper installés', 'Importmap indisponible (ok)');
-            $this->runCmd($io, ['php','bin/console','importmap:install'], $root, 'Importmap installé', 'Importmap indisponible (ok)');
-            // Ajoute l'import JS dans app.js si pas présent
-            $content = (string) file_get_contents($appJs);
-            if (!str_contains($content, "import 'bootstrap'")) {
-                $content .= "\nimport 'bootstrap';\n";
-                $this->fs->dumpFile($appJs, $content);
-                $io->success('assets/app.js patché (import "bootstrap")');
-            }
-        }
+        $output->writeln('✅ Installation terminée.');
 
-        // 5) CSS: app.css + planner.css du bundle
-        if (!$input->getOption('no-css')) {
-            $stylesDir = $root.'/assets/styles';
-            $this->fs->mkdir($stylesDir);
-            $appCss = $stylesDir.'/app.css';
-            if (!$this->fs->exists($appCss)) {
-                $this->fs->dumpFile($appCss, <<<CSS
-                    /* Bootstrap CSS via CDN ou via ton thème */
-                    @import url("https://cdn.jsdelivr.net/npm/bootstrap@5/dist/css/bootstrap.min.css");
-                    
-                    /* CSS du bundle MPTP (via AssetMapper alias @mptp) */
-                    @import "@mptp/styles/planner.css";
-                CSS);
-                $io->success('assets/styles/app.css créé');
-            } else {
-                $css = (string) file_get_contents($appCss);
-                $changed = false;
-                if (!str_contains($css, '@mptp/styles/planner.css')) {
-                    $css .= "\n@import \"@mptp/styles/planner.css\";\n";
-                    $changed = true;
-                }
-                if ($changed) {
-                    $this->fs->dumpFile($appCss, $css);
-                    $io->success('assets/styles/app.css patché (planner.css)');
-                }
-            }
-        }
-
-        $io->note('Terminé. Pense à inclure <link rel="stylesheet" href="{{ asset(\'styles/app.css\') }}"> dans base.html.twig et {{ importmap(\'app\') }}.');
         return Command::SUCCESS;
     }
 
-    /** Helper pour exécuter une sous-commande console si dispo */
-    private function runCmd(SymfonyStyle $io, array $cmd, string $cwd, string $okMsg, string $warnMsg): void
+    private function mergeFile(string $sourcePath, string $targetPath): void
     {
-        $p = new Process($cmd, $cwd, null, null, 40);
-        $p->run();
-        if ($p->isSuccessful()) {
-            $io->text('• '.$okMsg);
+        $filesystem = new Filesystem();
+
+        if (!$filesystem->exists($sourcePath)) {
+            return;
+        }
+
+        $newContent = file_get_contents($sourcePath);
+
+        if ($filesystem->exists($targetPath)) {
+            $existingContent = file_get_contents($targetPath);
+
+            if (strpos($existingContent, $newContent) === false) {
+                file_put_contents($targetPath, $existingContent . PHP_EOL . $newContent);
+            }
         } else {
-            $io->warning($warnMsg.' — '.$p->getErrorOutput());
+            file_put_contents($targetPath, $newContent);
         }
     }
 }
