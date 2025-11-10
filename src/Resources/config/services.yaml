@@ -17,3 +17,7 @@ services:
     resource: '../../Controller/'
     tags: [ 'controller.service_arguments' ]
     public: true
+
+  Ad2210\MultiProjectTeamPlanning\Command\:
+    resource: '../../Command/*'
+    public: true

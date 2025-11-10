@@ -20,53 +20,38 @@ export default class extends Controller {
         const d = event.detail || {};
         this.current = d;
 
-        // Remplir le bloc "vue"
-        this.titleTarget.textContent = d.title || 'Créneau';
-        this.rangeTarget.textContent = `${this._fmt(d.start_at)} – ${this._fmt(d.end_at)}`;
-        this.userTarget.textContent = d.user_label || d.user_id || '';
-        this.projectTarget.textContent = d.project_label || d.project_id || '';
-        this.statusTarget.textContent = d.status || '—';
+        // Titre du header
+        const title = d.updateUrl ? (d.title || 'Détail du créneau') : 'Nouveau créneau';
+        const h = this.element.querySelector('.modal-title');
+        if (h) h.textContent = title;
 
-        // Init form (caché au début)
-        this.titleInputTarget.value = d.title || '';
-        this.startInputTarget.value = this._toLocalInput(d.start_at);
-        this.endInputTarget.value   = this._toLocalInput(d.end_at);
-        this.userInputTarget.value  = d.user_id || '';
-        this.projectInputTarget.value = d.project_id || '';
+        // URL du form (GET) — base configurable via data-attr, fallback par défaut
+        const base = this.element.dataset.plannerDetailFormBaseUrlValue || '/planning/forms/slot';
+        const qs = new URLSearchParams({
+            title:     d.title || '',
+            start_at:  d.start_at || '',
+            end_at:    d.end_at || '',
+            user_id:   d.user_id || '',
+            project_id:d.project_id || '',
+            status:    d.status || ''
+        }).toString();
+        const url = d.id ? `${base}/${encodeURIComponent(d.id)}?${qs}` : `${base}?${qs}`;
 
-        // Selon le contexte: update (id présent) ou create (id absent)
-        const grid = document.querySelector('.mptp .mptp-grid-body');
-        const hasUpdate = !!d.updateUrl;
-        const hasCreate = !!grid?.dataset.plannerGridCreateUrlValue;
+        // Charge le Twig et remplace le contenu de la modal
+        const body = this.element.querySelector('.modal-body');
+        if (body) body.innerHTML = '<div class="text-center py-5">Chargement…</div>';
 
-        if (hasUpdate) {
-            // Mode "détail" + bouton Modifier visible
-            this.viewBlockTarget.classList.remove('d-none');
-            this.formBlockTarget.classList.add('d-none');
-            this.editBtnTarget.classList.remove('d-none');
-            this.saveBtnTarget.classList.add('d-none');
-            this.saveBtnTarget.textContent = 'Enregistrer';
-            this.element.querySelector('.modal-title').textContent = d.title ? d.title : 'Détail du créneau';
-        } else {
-            // Mode "création" direct
-            this.viewBlockTarget.classList.add('d-none');
-            this.formBlockTarget.classList.remove('d-none');
-            this.editBtnTarget.classList.add('d-none');
-            this.saveBtnTarget.classList.remove('d-none');
-            this.saveBtnTarget.textContent = 'Créer';
-            this.element.querySelector('.modal-title').textContent = 'Nouveau créneau';
-
-            // Si aucune route POST configurée, on désactive "Créer"
-            if (!hasCreate) {
-                this.saveBtnTarget.disabled = true;
-                this.saveBtnTarget.title = 'Aucune route de création configurée';
-            } else {
-                this.saveBtnTarget.disabled = false;
-                this.saveBtnTarget.title = '';
-            }
-        }
-
-        this.modal?.show();
+        fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+            .then(r => r.text())
+            .then(html => {
+                if (body) body.innerHTML = html;
+                this.modal?.show();
+            })
+            .catch(err => {
+                console.error('Form load failed', err);
+                if (body) body.innerHTML = '<div class="alert alert-danger">Impossible de charger le formulaire.</div>';
+                this.modal?.show();
+            });
     }
     enterEdit() {
         this.viewBlockTarget.classList.add('d-none');
