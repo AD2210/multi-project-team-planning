@@ -41,7 +41,7 @@ final class MptpInstallCommand extends Command
 
         $map = [
             // config
-            'config/packages/ad2210_planning.yaml' => $srcBase . '/config/packages/ad2210_planning.yaml',
+            'config/packages/ad2210_mptp.yaml' => $srcBase . '/config/packages/ad2210_mptp.yaml',
             // routes
             'config/routes/ad2210_mptp.yaml'       => $srcBase . '/config/routes/ad2210_mptp.yaml',
             // services (facultatif, vide par défaut)
