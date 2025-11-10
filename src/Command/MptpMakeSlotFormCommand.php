@@ -14,10 +14,10 @@ use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\HttpKernel\KernelInterface;
 
 #[AsCommand(
-    name: 'ad2210:mptp:make:slot-form',
+    name: 'mptp:make:slot-form',
     description: 'Scaffold d’un FormType/Controller/Twig pour le popup Planning'
 )]
-final class MakeSlotFormCommand extends Command
+final class MptpMakeSlotFormCommand extends Command
 {
     public function __construct(
         private readonly KernelInterface $kernel,

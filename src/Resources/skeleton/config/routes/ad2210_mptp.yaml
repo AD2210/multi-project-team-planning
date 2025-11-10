@@ -1,0 +1,3 @@
+ad2210_mptp:
+  resource: '@MultiProjectTeamPlanningBundle/Resources/config/routes.yaml'
+  prefix:   /planning
