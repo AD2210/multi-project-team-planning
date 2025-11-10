@@ -49,8 +49,8 @@ class MptpInstallCommand extends Command
         $this->mergeFile($sourceBaseDir . '/stimulus_bootstrap.js', $assetsDir . '/stimulus_bootstrap.js');
 
         $output->writeln('➔️  Copie/Patch des fichiers de config YAML');
-        $filesystem->copy($sourceConfigDir . '/package/ad2210_mptp.yaml', $configDir . '/ad2210_mptp.yaml', true);
-        $this->mergeFile($sourceConfigDir . '/package/asset_mapper.yaml', $configDir . '/asset_mapper.yaml');
+        $filesystem->copy($sourceConfigDir . '/packages/ad2210_mptp.yaml', $configDir . '/ad2210_mptp.yaml', true);
+        $this->mergeFile($sourceConfigDir . '/packages/asset_mapper.yaml', $configDir . '/asset_mapper.yaml');
 
         $output->writeln('➔️  Patch du fichier importmap.php');
         $importmapPath = $this->projectDir . '/importmap.php';
