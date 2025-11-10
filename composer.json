@@ -1,8 +1,9 @@
 {
     "name": "ad2210/multi-project-team-planning",
     "description": "manage planning for multi project with team, several views (global planning, teammate view, project view)",
-    "type": "composer-bundle",
+    "type": "symfony-bundle",
     "require": {
+        "php": ">=8.3",
         "symfony/http-kernel": "^7.3",
         "symfony/dependency-injection": "^7.3",
         "symfony/config": "^7.3",

@@ -1,28 +1,60 @@
 ad2210_planning:
   timezone: 'Europe/Paris'
-  formats:
-    day_label:  'EEE dd MMM'
-    hour_label: 'HH:mm'
+  locale: 'fr_FR'
+
+  api:
+    list_url:               '/api/planning/slots'
+    create_url:             '/api/planning/slots'
+    update_url_template:    '/api/planning/slots/{id}'
+    duplicate_url_template: '/api/planning/slots/{id}/duplicate'
+    delete_url_template:    '/api/planning/slots/{id}'
+    csrf_header:            'X-CSRF-TOKEN'
+    csrf_token_id:          'planning_api'
+
+    # Payload envoyé vers l'API'
+    #{
+    #  "start_at": "2025-11-09T13:30:00",
+    #  "end_at":   "2025-11-09T15:00:00",
+    #  "timezone": "Europe/Paris",
+    #  "user_id":  12,
+    #  "project_id": null
+    #}
+
+  # valeurs par défaut (facultatives)
+  toolbar:
+    anchor_location: toolbar
+    user_selector_location: toolbar
+    views: { day: true, week: true, workweek: true, month: true }
+
+  grid:
+    work_start: '07:00'
+    work_end: '19:00'
+    overflow_hours: 2
+    now_indicator: true
+    highlight_current_day: true
+    minute_step: 15
+    half_hour_opacity: 0.25
+    day_label_format: 'EEE d MMM' # Format ICU
+    time_label_format: 'HH:mm' # Format ICU
+
   modes:
+    global:
+      toolbar:
+        anchor_location: sidebar
+        views: { month: true, week: true, workweek: false, day: false }
+      grid:
+        minute_step: 60
+
     user:
       toolbar:
-        show_anchor_picker: true
-        show_user_picker: true
-        show_project_picker: false
-        show_period_picker: true
-        anchor_in_sidebar: false
-        user_in_sidebar: false
-        project_in_sidebar: true
+        anchor_location: toolbar
+        user_selector_location: toolbar
       grid:
         minute_step: 30
-        first_hour: 7
-        last_hour: 19
-        show_now_line: true
-      api:
-        # on pointe vers l'API de démo créée par make:demo (même host)
-        list_url:               '/planning/api/slots?mode=user'
-        create_url:             '/planning/api/slots'
-        update_url_template:    '/planning/api/slots/{id}'
-        duplicate_url_template: '/planning/api/slots/{id}/duplicate'
-        delete_url_template:    '/planning/api/slots/{id}'
-        csrf_header:            'X-CSRF-TOKEN'
+
+    project:
+      toolbar:
+        anchor_location: toolbar
+        user_selector_location: sidebar
+      grid:
+        overflow_hours: 1
