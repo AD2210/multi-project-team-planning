@@ -38,8 +38,8 @@ final class MultiProjectTeamPlanningExtension extends Extension
             $container->prependExtensionConfig('framework', [
                 'asset_mapper' => [
                     'paths' => [
-                        // rend disponible @mptp/… depuis vendor
-                        $projectDir.'/vendor/ad2210/multi-project-team-planning/assets' => '@mptp',
+                        $projectDir.'/vendor/ad2210/multi-project-team-planning/assets/controllers' => '@mptp/controllers',
+                        $projectDir.'/vendor/ad2210/multi-project-team-planning/assets/styles' => '@mptp/styles',
                     ],
                 ],
             ]);

@@ -10,6 +10,6 @@ class MultiProjectTeamPlanningBundle extends Bundle
 {
     public function getContainerExtension(): ?ExtensionInterface
     {
-        return $this->extension ??= new MultiProjectTeamPlanningExtension();
+        return new MultiProjectTeamPlanningExtension();
     }
 }
