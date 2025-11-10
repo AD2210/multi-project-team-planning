@@ -37,7 +37,7 @@ final class MptpInstallCommand extends Command
         $force = (bool) $input->getOption('force');
 
         // Emplacements sources (dans le bundle)
-        $srcBase = \dirname(__DIR__, 2) . '/Resources/skeleton';
+        $srcBase = \dirname(__DIR__, 2);
 
         $map = [
             // config

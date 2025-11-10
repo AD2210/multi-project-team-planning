@@ -1,4 +1,0 @@
-ad2210_planning:
-  resource: '@MultiProjectTeamPlanningBundle/Resources/config/routes.yaml'
-  type: yaml
-  prefix: /planning
