@@ -1,5 +1,12 @@
 framework:
   asset_mapper:
+    # The paths to make available to the asset mapper.
     paths:
       assets/: ''
       vendor/ad2210/multi-project-team-planning/assets/: '@mptp'
+    missing_import_mode: strict
+
+when@prod:
+  framework:
+    asset_mapper:
+      missing_import_mode: warn
