@@ -50,7 +50,9 @@ final class PlannerUserView
     public function getAnchorDate(): DateTimeImmutable
     {
         $tz = new DateTimeZone($this->opt->tz());
-        return new DateTimeImmutable($this->anchor, $tz);
+        return $this->anchor === 'today'
+            ? new DateTimeImmutable('today', $tz)
+            : new DateTimeImmutable($this->anchor, $tz);
     }
 
     /** @return array{start:\DateTimeImmutable,end:\DateTimeImmutable,days:\DateTimeImmutable[]} */
@@ -115,29 +117,21 @@ final class PlannerUserView
     public function today(): void { $this->anchor = 'today'; }
 
     #[LiveAction]
+    public function setAnchor(string $value): void
+    {
+        $this->anchor = $value;
+    }
+
+    #[LiveAction]
     public function next(): void
     {
-        $a = $this->getAnchorDate();
-        $new = match ($this->period) {
-            'day' => $a->modify('+1 day'),
-            'workweek','week' => $a->modify('+1 week'),
-            'month' => $a->modify('+1 month'),
-            default => $a
-        };
-        $this->anchor = $new->format('Y-m-d');
+        $this->anchor = $this->shiftAnchor(+1);
     }
 
     #[LiveAction]
     public function prev(): void
     {
-        $a = $this->getAnchorDate();
-        $new = match ($this->period) {
-            'day' => $a->modify('-1 day'),
-            'workweek','week' => $a->modify('-1 week'),
-            'month' => $a->modify('-1 month'),
-            default => $a
-        };
-        $this->anchor = $new->format('Y-m-d');
+        $this->anchor = $this->shiftAnchor(-1);
     }
 
     #[LiveAction]
@@ -153,5 +147,25 @@ final class PlannerUserView
     {
         $days = array_values($this->getWindow()['days']);
         return $days[\count($days)-1]->format('Y-m-d');
+    }
+
+    private function shiftAnchor(int $offset): string
+    {
+        $tz = new \DateTimeZone($this->opt->tz());
+
+        $ref = $this->anchor === 'today'
+            ? new \DateTimeImmutable('now', $tz)
+            : \DateTimeImmutable::createFromFormat('Y-m-d', $this->anchor, $tz);
+
+        if (!$ref) {
+            $ref = new \DateTimeImmutable('now', $tz);
+        }
+
+        return match ($this->period) {
+            'month'     => $ref->modify("$offset month")->format('Y-m-d'),
+            'week',
+            'workweek'  => $ref->modify("$offset week")->format('Y-m-d'),
+            default     => $ref->modify("$offset day")->format('Y-m-d'),
+        };
     }
 }

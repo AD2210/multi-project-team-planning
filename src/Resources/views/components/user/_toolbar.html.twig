@@ -6,9 +6,9 @@
 
             {# Navigation #}
             <div class="btn-group" role="group" aria-label="Navigation">
-                <button class="btn btn-sm btn-outline-secondary" data-action="live#action" data-live-name="prev">‹</button>
-                <button class="btn btn-sm btn-outline-secondary" data-action="live#action" data-live-name="today">Aujourd’hui</button>
-                <button class="btn btn-sm btn-outline-secondary" data-action="live#action" data-live-name="next">›</button>
+                <button class="btn btn-sm btn-outline-secondary" data-action="live#action" data-live-action-param="prev">‹</button>
+                <button class="btn btn-sm btn-outline-secondary" data-action="live#action" data-live-action-param="today">Aujourd’hui</button>
+                <button class="btn btn-sm btn-outline-secondary" data-action="live#action" data-live-action-param="next">›</button>
             </div>
 
             {# Ancre (date) configurable toolbar/sidebar — ici on gère seulement toolbar #}
@@ -48,19 +48,19 @@
                 {# Vues activées par YAML #}
                 {% if tb.views.day %}
                     <button class="btn btn-sm {{ comp.period == 'day' ? 'btn-primary' : 'btn-outline-secondary' }}"
-                            data-action="live#action" data-live-name="setPeriod" data-live-period-param="day">Jour</button>
+                            data-action="live#action" data-live-action-param="setPeriod" data-live-period-param="day">Jour</button>
                 {% endif %}
                 {% if tb.views.week %}
                     <button class="btn btn-sm {{ comp.period == 'week' ? 'btn-primary' : 'btn-outline-secondary' }}"
-                            data-action="live#action" data-live-name="setPeriod" data-live-period-param="week">Semaine</button>
+                            data-action="live#action" data-live-action-param="setPeriod" data-live-period-param="week">Semaine</button>
                 {% endif %}
                 {% if tb.views.workweek %}
                     <button class="btn btn-sm {{ comp.period == 'workweek' ? 'btn-primary' : 'btn-outline-secondary' }}"
-                            data-action="live#action" data-live-name="setPeriod" data-live-period-param="workweek">Travail</button>
+                            data-action="live#action" data-live-action-param="setPeriod" data-live-period-param="workweek">Travail</button>
                 {% endif %}
                 {% if tb.views.month %}
                     <button class="btn btn-sm {{ comp.period == 'month' ? 'btn-primary' : 'btn-outline-secondary' }}"
-                            data-action="live#action" data-live-name="setPeriod" data-live-period-param="month">Mois</button>
+                            data-action="live#action" data-live-action-param="setPeriod" data-live-period-param="month">Mois</button>
                 {% endif %}
             </div>
         </div>
