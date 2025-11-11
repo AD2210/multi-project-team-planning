@@ -44,12 +44,6 @@ return [
     '@mptp/planner_detail_controller' => [
         'path' => '@mptp/controllers/planner_detail_controller.js'
     ],
-    '@mptp/planner_controller' => [
-        'path' => '@mptp/controllers/planner_controller.js'
-    ],
-    '@mptp/planner_anchor_controller' => [
-        'path' => '@mptp/controllers/planner_anchor_controller.js'
-    ],
     '@mptp/planner' => [
         'path' => '@mptp/styles/planner.css',
         'type' => 'css',

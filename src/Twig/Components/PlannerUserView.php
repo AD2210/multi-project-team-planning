@@ -50,9 +50,7 @@ final class PlannerUserView
     public function getAnchorDate(): DateTimeImmutable
     {
         $tz = new DateTimeZone($this->opt->tz());
-        return $this->anchor === 'today'
-            ? new DateTimeImmutable('today', $tz)
-            : new DateTimeImmutable($this->anchor, $tz);
+        return new DateTimeImmutable($this->anchor, $tz);
     }
 
     /** @return array{start:\DateTimeImmutable,end:\DateTimeImmutable,days:\DateTimeImmutable[]} */

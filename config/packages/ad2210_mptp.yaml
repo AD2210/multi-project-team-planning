@@ -40,21 +40,21 @@ ad2210_planning:
   modes:
     global:
       toolbar:
-        anchor_location: sidebar
-        views: { month: true, week: true, workweek: false, day: false }
+        anchor_location: toolbar
+        views: { month: false, week: true, workweek: true, day: true }
       grid:
         minute_step: 60
 
     user:
       toolbar:
-        anchor_location: toolbar
-        user_selector_location: toolbar
+        anchor_location: sidebar
+        user_selector_location: sidebar
+        views: { month: true, week: true, workweek: true, day: false }
       grid:
         minute_step: 30
 
     project:
       toolbar:
-        anchor_location: toolbar
+        anchor_location: sidebar
         user_selector_location: sidebar
-      grid:
-        overflow_hours: 1
+        views: { month: true, week: true, workweek: true, day: false }

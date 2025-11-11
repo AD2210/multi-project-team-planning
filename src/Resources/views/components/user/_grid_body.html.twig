@@ -43,8 +43,8 @@
         <div class="mptp-col {{ d.ymd == 'now'|date('Y-m-d') and g.highlight_current_day ? 'today' }}"
              data-planner-grid-target="dayCol"
              data-date="{{ d.ymd }}">
-        {% if g.now_indicator and d.date|date('Y-m-d') == 'now'|date('Y-m-d') %}
-                {% set nowMinute = 'now'|date('H')*60 + 'now'|date('i') %}
+            {% if g.now_indicator and d.ymd == 'now'|date('Y-m-d') %}
+                {% set nowMinute = 'now'|date('H', ui.tz )*60 + 'now'|date('i') %}
                 {% set firstRow = rows|first %}
                 {% set offset = max([(nowMinute - firstRow.minute) / (g.minute_step), 0]) %}
                 <div class="mptp-now" style="top: calc({{ offset }} * var(--mptp-row-h));"></div>
