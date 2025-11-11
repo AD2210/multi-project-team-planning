@@ -40,7 +40,7 @@ class MptpInstallCommand extends Command
         $filesystem->mkdir([$stylesDir, $controllersDir]);
 
         // Fichiers source depuis le bundle
-        $sourceBaseDir = \dirname(__DIR__, 2).'/src/Ressources/install';
+        $sourceBaseDir = \dirname(__DIR__, 2).'/src/Resources/install';
         $sourceConfigDir = \dirname(__DIR__, 2).'/config';
 
         $output->writeln('➔️  Fusion des fichiers JS et CSS');

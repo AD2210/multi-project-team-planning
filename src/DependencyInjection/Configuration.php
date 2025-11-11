@@ -9,7 +9,7 @@ final class Configuration implements ConfigurationInterface
 {
     public function getConfigTreeBuilder(): TreeBuilder
     {
-        $tb = new TreeBuilder('ad2210_planning');
+        $tb = new TreeBuilder('mptp');
         $root = $tb->getRootNode();
 
         $root

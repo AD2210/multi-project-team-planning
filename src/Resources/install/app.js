@@ -4,6 +4,6 @@ import './stimulus_bootstrap.js';
 import 'bootstrap';
 import 'bootstrap/dist/css/bootstrap.min.css';
 // Style de l'application'
-import './app.css';
+import './styles/app.css';
 // Style du bundle mptp
 import '@mptp/planner';
