@@ -9,7 +9,7 @@ final class Configuration implements ConfigurationInterface
 {
     public function getConfigTreeBuilder(): TreeBuilder
     {
-        $tb = new TreeBuilder('mptp');
+        $tb = new TreeBuilder('ad2210_mptp');
         $root = $tb->getRootNode();
 
         $root
@@ -21,13 +21,14 @@ final class Configuration implements ConfigurationInterface
                 ->arrayNode('api')
                     ->addDefaultsIfNotSet()
                     ->children()
-                        ->scalarNode('list_url')->defaultNull()->end()
-                        ->scalarNode('create_url')->defaultNull()->end()              # ex: /api/planning/slots
-                        ->scalarNode('update_url_template')->defaultNull()->end()     # ex: /api/planning/slots/{id}
-                        ->scalarNode('duplicate_url_template')->defaultNull()->end()  # ex: /api/planning/slots/{id}/duplicate
-                        ->scalarNode('delete_url_template')->defaultNull()->end()     # ex: /api/planning/slots/{id}
+                        ->scalarNode('list_url')->defaultNull()->end()                  # ex: /api/planning/slots [GET]
+                        ->scalarNode('show_url')->defaultNull()->end()                  # ex: /api/planning/slots/{id} [GET]
+                        ->scalarNode('create_url')->defaultNull()->end()                # ex: /api/planning/slots [POST]
+                        ->scalarNode('update_url')->defaultNull()->end()                # ex: /api/planning/slots/{id} [PUT/PATCH]
+                        ->scalarNode('duplicate_url')->defaultNull()->end()             # ex: /api/planning/slots/{id}/duplicate [POST]
+                        ->scalarNode('delete_url')->defaultNull()->end()                # ex: /api/planning/slots/{id} [DELETE]
                         ->scalarNode('csrf_header')->defaultValue('X-CSRF-TOKEN')->end()
-                        ->scalarNode('csrf_token_id')->defaultNull()->end()           # ex: planning_api
+                        ->scalarNode('csrf_token_id')->defaultNull()->end()             # ex: planning_api
                     ->end()
                 ->end()
                 // --- Toolbar (valeurs par défaut communes) ---
@@ -35,7 +36,7 @@ final class Configuration implements ConfigurationInterface
                     ->addDefaultsIfNotSet()
                     ->children()
                         ->enumNode('anchor_location')->values(['toolbar', 'sidebar'])->defaultValue('toolbar')->end()
-                        ->enumNode('user_selector_location')->values(['toolbar', 'sidebar'])->defaultValue('toolbar')->end()
+                        ->enumNode('selector_location')->values(['toolbar', 'sidebar'])->defaultValue('toolbar')->end()
                         ->arrayNode('views')
                             ->addDefaultsIfNotSet()
                             ->children()
@@ -73,7 +74,7 @@ final class Configuration implements ConfigurationInterface
                             ->arrayNode('toolbar')
                                 ->children()
                                     ->enumNode('anchor_location')->values(['toolbar', 'sidebar'])->end()
-                                    ->enumNode('user_selector_location')->values(['toolbar', 'sidebar'])->end()
+                                    ->enumNode('selector_location')->values(['toolbar', 'sidebar'])->end()
                                     ->arrayNode('views')
                                         ->children()
                                             ->booleanNode('day')->end()

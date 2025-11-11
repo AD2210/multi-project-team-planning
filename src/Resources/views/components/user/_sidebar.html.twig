@@ -1,0 +1,35 @@
+{% set tb = ui.toolbar %}
+
+<aside class="mptp-sidebar p-2 me-3">
+    {% if tb.anchor_location == 'sidebar' %}
+        <div class="mb-2">
+            <label class="form-label">Date :</label>
+            <input type="date" class="form-control form-control-sm"
+                   data-model="anchor"
+                   value="{{ comp.anchor == 'today' ? 'now'|date('Y-m-d') : comp.anchor }}">
+        </div>
+    {% endif %}
+
+    {% if comp.mode == 'user' and tb.selector_location == 'sidebar' %}
+        <div class="mb-2">
+            <label class="form-label">Utilisateur :</label>
+            <select class="form-select form-select-sm"
+                    data-action="change->planner-toolbar#updateUser"
+                    data-planner-toolbar-target="user">
+                <option value="">— Utilisateur —</option>
+                <option value="1" {{ comp.userId == 1 ? 'selected' }}>User 1</option>
+                <option value="2" {{ comp.userId == 2 ? 'selected' }}>User 2</option>
+            </select>
+        </div>
+    {% endif %}
+
+    {% if comp.mode == 'project' and tb.selector_location == 'sidebar'%}
+        <select class="form-select form-select-sm"
+                data-action="change->planner-toolbar#updateProject"
+                data-planner-toolbar-target="project">
+            <option value="">— Projet —</option>
+            <option value="10">Projet 10</option>
+            <option value="11">Projet 11</option>
+        </select>
+    {% endif %}
+</aside>

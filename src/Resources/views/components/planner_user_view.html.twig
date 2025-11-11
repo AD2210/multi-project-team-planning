@@ -1,24 +1,34 @@
-<div {{ attributes }} class="mptp mptp-user-view container-fluid">
-    {% include '@MultiProjectTeamPlanning/components/user/_toolbar.html.twig' with {
-        ui: this.ui,
-        comp: this
-    } only %}
-
-    {% include '@MultiProjectTeamPlanning/components/user/_grid_header.html.twig' with {
-        days: this.daysForView
-    } only %}
-
-    <div class="mptp-grid-scroll">
-        {% include '@MultiProjectTeamPlanning/components/user/_grid_body.html.twig' with {
-        ui: this.ui,
-        comp: this,
-        days: this.daysForView,
-        grid: this.grid,
-        csrf: this.csrfTokenValue,
-        rangeStart: this.rangeStartYmd,
-        rangeEnd: this.rangeEndYmd
+<div {{ attributes }} class="container-fluid d-flex">
+    {% if this.mode == 'user' or this.mode == 'project' %}
+        {% if this.ui.anchor_location == 'sidebar' or this.ui.selector_location == 'sidebar' %}
+            {% include '@MultiProjectTeamPlanning/components/user/_sidebar.html.twig' with {
+                ui: this.ui,
+                comp: this
+            } only %}
+        {% endif %}
+    {% endif %}
+    <div class="mptp mptp-user-view container-fluid">
+        {% include '@MultiProjectTeamPlanning/components/user/_toolbar.html.twig' with {
+            ui: this.ui,
+            comp: this
         } only %}
-    </div>
 
-    {% include '@MultiProjectTeamPlanning/components/user/_detail_modal.html.twig' %}
+        {% include '@MultiProjectTeamPlanning/components/user/_grid_header.html.twig' with {
+            days: this.daysForView
+        } only %}
+
+        <div class="mptp-grid-scroll">
+            {% include '@MultiProjectTeamPlanning/components/user/_grid_body.html.twig' with {
+            ui: this.ui,
+            comp: this,
+            days: this.daysForView,
+            grid: this.grid,
+            csrf: this.csrfTokenValue,
+            rangeStart: this.rangeStartYmd,
+            rangeEnd: this.rangeEndYmd
+            } only %}
+        </div>
+
+        {% include '@MultiProjectTeamPlanning/components/user/_detail_modal.html.twig' %}
+    </div>
 </div>

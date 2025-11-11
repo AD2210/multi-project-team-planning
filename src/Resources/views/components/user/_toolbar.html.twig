@@ -24,7 +24,7 @@
 
             <div class="ms-auto d-flex align-items-center gap-2">
                 {# Sélecteur user si mode=user et emplacement=toolbar #}
-                {% if comp.mode == 'user' and tb.user_selector_location == 'toolbar' %}
+                {% if comp.mode == 'user' and tb.selector_location == 'toolbar' %}
                     <select class="form-select form-select-sm"
                             data-action="change->planner-toolbar#updateUser"
                             data-planner-toolbar-target="user">
@@ -35,7 +35,7 @@
                     </select>
                 {% endif %}
 
-                {% if comp.mode == 'project' %}
+                {% if comp.mode == 'project' and tb.selector_location == 'toolbar'%}
                     <select class="form-select form-select-sm"
                             data-action="change->planner-toolbar#updateProject"
                             data-planner-toolbar-target="project">
