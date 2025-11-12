@@ -44,6 +44,9 @@ return [
     '@mptp/planner_detail_controller' => [
         'path' => '@mptp/controllers/planner_detail_controller.js'
     ],
+    '@mptp/planner_grid_month_controller' => [
+        'path' => '@mptp/controllers/planner_grid_month_controller.js'
+    ],
     '@mptp/planner' => [
         'path' => '@mptp/styles/planner.css',
         'type' => 'css',

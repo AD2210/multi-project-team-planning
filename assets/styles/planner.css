@@ -171,3 +171,38 @@
 .min-vh-20 { min-height: 20vh !important; }
 .min-vh-16 { min-height: 16vh !important; }
 .min-vh-12 { min-height: 12vh !important; }
+
+.mptp-day-cell:hover .btn-create {
+    display: block !important;
+}
+
+/* vue month */
+.mptp-slot-item {
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.mptp-slot-item:hover {
+    border: 1px solid var(--bs-primary);
+    background: var(--bs-light);
+}
+
+.mptp-slot-item.selected {
+    border: 2px solid var(--bs-primary);
+    background: var(--bs-primary-bg-subtle);
+}
+
+.mptp-slot-item .dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+}
+.slot--ghost {
+    opacity: 0.8;
+    border-style: dashed !important;
+}
+
+.slot--ghost .slot-title {
+    font-style: italic;
+}

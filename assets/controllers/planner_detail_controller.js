@@ -9,57 +9,70 @@ export default class extends Controller {
     ];
 
     connect() {
-        // Bootstrap Modal instance
         const Modal = window.bootstrap?.Modal;
         this.modal = Modal ? new Modal(this.element) : null;
-        this.current = null; // { id, title, start_at, end_at, user_id, project_id, mode, updateUrl }
+        this.current = null;
     }
 
-    // Reçoit un event global envoyé par planner-grid
     open(event) {
         const d = event.detail || {};
         this.current = d;
 
-        // Titre du header
         const title = d.updateUrl ? (d.title || 'Détail du créneau') : 'Nouveau créneau';
         const h = this.element.querySelector('.modal-title');
         if (h) h.textContent = title;
 
-        // URL du form (GET) — base configurable via data-attr, fallback par défaut
-        const base = this.element.dataset.plannerDetailFormBaseUrlValue || '/planning/forms/slot';
-        const qs = new URLSearchParams({
-            title:     d.title || '',
-            start_at:  d.start_at || '',
-            end_at:    d.end_at || '',
-            user_id:   d.user_id || '',
-            project_id:d.project_id || '',
-            status:    d.status || ''
-        }).toString();
-        const url = d.id ? `${base}/${encodeURIComponent(d.id)}?${qs}` : `${base}?${qs}`;
-
-        // Charge le Twig et remplace le contenu de la modal
+        const base = '/planning/api/slots';
         const body = this.element.querySelector('.modal-body');
         if (body) body.innerHTML = '<div class="text-center py-5">Chargement…</div>';
 
-        fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
-            .then(r => r.text())
-            .then(html => {
-                if (body) body.innerHTML = html;
-                this.modal?.show();
-            })
-            .catch(err => {
-                console.error('Form load failed', err);
-                if (body) body.innerHTML = '<div class="alert alert-danger">Impossible de charger le formulaire.</div>';
-                this.modal?.show();
-            });
+        // Remplissage manuel des cibles si en mode affichage simple
+        if (d.id) {
+            fetch(`${base}`)
+                .then(r => r.json())
+                .then(data => {
+                    const found = data.find(x => x.id === d.id);
+                    if (!found) throw new Error('Not found');
+
+                    if (body) {
+                        this.titleTarget.textContent = found.title;
+                        this.rangeTarget.textContent = `${this._fmt(d.start_at)} - ${this._fmt(d.end_at)}`;
+                        this.userTarget.textContent = found.user_label || 'Utilisateur';
+                        this.projectTarget.textContent = found.project_label || 'Projet';
+                        this.statusTarget.textContent = found.status || 'planned';
+                    }
+                    this.modal?.show();
+                })
+                .catch(err => {
+                    if (body) body.innerHTML = '<div class="alert alert-danger">Erreur de chargement.</div>';
+                    this.modal?.show();
+                });
+        } else {
+            // mode création
+            this.titleTarget.textContent = d.title || 'Nouveau créneau';
+            this.rangeTarget.textContent = `${this._fmt(d.start_at)} - ${this._fmt(d.end_at)}`;
+            this.userTarget.textContent = d.user_id ? `User ${d.user_id}` : 'Utilisateur';
+            this.projectTarget.textContent = d.project_id ? `Projet ${d.project_id}` : 'Projet';
+            this.statusTarget.textContent = d.status || 'planned';
+            this.modal?.show();
+        }
     }
+
     enterEdit() {
         this.viewBlockTarget.classList.add('d-none');
         this.formBlockTarget.classList.remove('d-none');
         this.editBtnTarget.classList.add('d-none');
         this.saveBtnTarget.classList.remove('d-none');
         this.saveBtnTarget.textContent = 'Enregistrer';
+
+        const form = this.formBlockTarget;
+        form.querySelector('[name="title"]').value = this.current.title || '';
+        form.querySelector('[name="start_at"]').value = this.current.start_at || '';
+        form.querySelector('[name="end_at"]').value = this.current.end_at || '';
+        form.querySelector('[name="user_id"]').value = this.current.user_id || '';
+        form.querySelector('[name="project_id"]').value = this.current.project_id || '';
     }
+
     async save() {
         const payload = {
             title: this.titleInputTarget.value || null,
@@ -79,19 +92,15 @@ export default class extends Controller {
 
         let ok = false;
 
-        // 1) Update si possible
-        if (this.current?.updateUrl) {
-            const res = await fetch(this.current.updateUrl, {
+        if (this.current?.id) {
+            const res = await fetch(`/planning/api/slots/${this.current.id}`, {
                 method: 'PUT',
                 headers,
                 body: JSON.stringify(payload)
             });
             ok = res.ok;
-        }
-
-        // 2) Sinon fallback en create (si route dispo)
-        if (!ok && grid?.dataset.plannerGridCreateUrlValue) {
-            const res2 = await fetch(grid.dataset.plannerGridCreateUrlValue, {
+        } else {
+            const res2 = await fetch(`/planning/api/slots`, {
                 method: 'POST',
                 headers,
                 body: JSON.stringify(payload)
@@ -100,7 +109,7 @@ export default class extends Controller {
         }
 
         if (!ok) {
-            console.error('Save failed (neither update nor create succeeded)');
+            console.error('Save failed');
             return;
         }
 
@@ -108,19 +117,15 @@ export default class extends Controller {
         grid?.dispatchEvent(new CustomEvent('planner-grid:reload', { bubbles: true }));
     }
 
-    // --- utils ---
     _fmt(iso) {
-        // très simple pour l’instant
         return (iso || '').replace('T', ' ').substring(0, 16);
     }
     _toLocalInput(iso) {
         if (!iso) return '';
-        // tronque à "YYYY-MM-DDTHH:mm"
         return iso.substring(0,16);
     }
     _fromLocalInput(v) {
         if (!v) return null;
-        // si on n’a pas de secondes, on ajoute ":00"
         return v.length === 16 ? v + ':00' : v;
     }
 }
