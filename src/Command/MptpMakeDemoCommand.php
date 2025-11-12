@@ -3,13 +3,18 @@ declare(strict_types=1);
 
 namespace Ad2210\MultiProjectTeamPlanning\Command;
 
+use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
 use Symfony\Component\Filesystem\Filesystem;
+use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\KernelInterface;
+use Symfony\Component\Routing\Attribute\Route;
 
 #[AsCommand(
     name: 'mptp:make:demo',
@@ -39,7 +44,7 @@ final class MptpMakeDemoCommand extends Command
         $this->fs->dumpFile($ctrlPath, $this->renderController());
         $io->success('Controller : src/Controller/PlanningDemoController.php');
 
-        $io->note('Lance le serveur et ouvre /planning');
+        $io->note('Lance le serveur et ouvre /api/planning');
         return Command::SUCCESS;
     }
 
@@ -80,7 +85,7 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\Routing\Attribute\Route;
 
-#[Route('/planning')]
+#[Route('/api/planning')]
 final class PlanningDemoController extends AbstractController
 {
     #[Route('', name: 'planning_index', methods: ['GET'])]
@@ -89,7 +94,7 @@ final class PlanningDemoController extends AbstractController
         return $this->render('planning/index.html.twig');
     }
 
-    #[Route('/api/slots', name: 'planning_slots_list', methods: ['GET'])]
+    #[Route('/slots', name: 'planning_slots_list', methods: ['GET'])]
     public function list(Request $req): JsonResponse
     {
         $s = $req->getSession();
@@ -110,7 +115,7 @@ final class PlanningDemoController extends AbstractController
         return $this->json($slots);
     }
 
-    #[Route('/api/slots', name: 'planning_slots_create', methods: ['POST'])]
+    #[Route('/slots', name: 'planning_slots_create', methods: ['POST'])]
     public function create(Request $req): JsonResponse
     {
         $s = $req->getSession();
@@ -134,7 +139,7 @@ final class PlanningDemoController extends AbstractController
         return $this->json(['id' => $id], 201);
     }
 
-    #[Route('/api/slots/{id}', name: 'planning_slots_update', methods: ['PUT','PATCH'])]
+    #[Route('/slots/{id}', name: 'planning_slots_update', methods: ['PUT','PATCH'])]
     public function update(string $id, Request $req): Response
     {
         $s = $req->getSession();
@@ -153,7 +158,7 @@ final class PlanningDemoController extends AbstractController
         return new Response('', 204);
     }
 
-    #[Route('/api/slots/{id}/duplicate', name: 'planning_slots_duplicate', methods: ['POST'])]
+    #[Route('/slots/{id}/duplicate', name: 'planning_slots_duplicate', methods: ['POST'])]
     public function duplicate(string $id, Request $req): JsonResponse
     {
         $s = $req->getSession();
@@ -180,7 +185,7 @@ final class PlanningDemoController extends AbstractController
         return $this->json(['id' => $newId], 201);
     }
 
-    #[Route('/api/slots/{id}', name: 'planning_slots_delete', methods: ['DELETE'])]
+    #[Route('/slots/{id}', name: 'planning_slots_delete', methods: ['DELETE'])]
     public function delete(string $id, Request $req): Response
     {
         $s = $req->getSession();
@@ -189,6 +194,7 @@ final class PlanningDemoController extends AbstractController
         return new Response('', 204);
     }
 }
+
 PHP;
     }
 }

@@ -5,7 +5,14 @@
     6: 'min-vh-12'
 }[comp.monthWeekCount] %}
 
-<div class="mptp-grid mptp-grid-month">
+<div class="mptp-grid mptp-grid-month"
+     data-controller="planner-grid-month"
+     data-planner-grid-month-mode-value="{{ comp.mode }}"
+     data-planner-grid-month-user-id-value="{{ comp.userId }}"
+     data-planner-grid-month-project-id-value="{{ comp.projectId }}"
+     data-planner-grid-month-timezone-value="{{ ui.tz }}"
+     data-action="keydown->planner-grid-month#keyDown"
+     tabindex="0">
     {% for index, week in comp.weeksForMonthView %}
         <div class="mptp-grid-row d-grid border-bottom {{ heightClass }}"
              style="grid-template-columns: 40px repeat({{ weekDaysCount }}, 1fr);">
@@ -13,13 +20,24 @@
                 {{ comp.daysForMonthView[index * weekDaysCount].weekNumber }}
             </div>
             {% for day in week %}
-                <div class="mptp-day-cell border-start p-1 {{ day.isCurrentMonth ? '' : 'bg-light text-muted' }}">
+                <div class="mptp-day-cell border-start p-1 {{ day.isCurrentMonth ? '' : 'bg-light text-muted' }}"
+                     data-date="{{ day.ymd }}"
+                     data-controller="planner-col"
+                     data-planner-col-date-value="{{ day.ymd }}"
+                     data-action="pointerdown->planner-grid#pointerDown">
                     <div class="fw-bold small text-center">{{ day.label }}</div>
                     <ul class="list-unstyled m-0 small">
-                        {% for event in comp.grid[day.ymd] ?? [] %}
-                            <li>{{ event.label }}</li>
-                        {% endfor %}
+                        {% for slot in comp.grid[day.ymd] ?? [] %}
+                        <li class="mptp-slot-item d-flex align-items-center gap-1 py-1 px-2 rounded"
+                            data-action="click->planner-grid-month#selectSlot"
+                        >
+                            {% endfor %}
                     </ul>
+                    <button class="btn btn-sm btn-outline-primary btn-create d-none"
+                            data-action="click->planner-grid-month#createSlot"
+                            data-date="{{ day.ymd }}">
+                        + Créer
+                    </button>
                 </div>
             {% endfor %}
         </div>
