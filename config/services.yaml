@@ -1,0 +1,8 @@
+services:
+    Ad2210\MultiProjectTeamPlanning\Twig\Components\PlannerUserView:
+        public: true
+        tags:
+            - { name: 'twig.component', key: 'planner_user_view' }
+            - name : 'ux.live_component'
+        autowire: true
+        autoconfigure: true

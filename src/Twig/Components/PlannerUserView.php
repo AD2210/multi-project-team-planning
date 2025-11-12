@@ -8,6 +8,7 @@ use Ad2210\MultiProjectTeamPlanning\Service\TimeGridBuilder;
 use Ad2210\MultiProjectTeamPlanning\Service\ViewWindow;
 use Symfony\UX\LiveComponent\Attribute\AsLiveComponent;
 use Symfony\UX\LiveComponent\Attribute\LiveAction;
+use Symfony\UX\LiveComponent\Attribute\LiveArg;
 use Symfony\UX\LiveComponent\Attribute\LiveProp;
 use Symfony\UX\LiveComponent\DefaultActionTrait;
 use Symfony\Component\Security\Csrf\CsrfTokenManagerInterface;
@@ -135,7 +136,10 @@ final class PlannerUserView
     }
 
     #[LiveAction]
-    public function setPeriod(string $period): void { $this->period = $period; }
+    public function setPeriod(#[LiveArg] string $period): void {
+        $this->period = $period;
+        $this->anchor = 'today'; // reset anchor, voir si on le conserve
+    }
 
     public function getRangeStartYmd(): string
     {

@@ -38,7 +38,6 @@
             </div>
         {% endfor %}
     </div>
-
     {% for d in days %}
         <div class="mptp-col {{ d.ymd == 'now'|date('Y-m-d') and g.highlight_current_day ? 'today' }}"
              data-planner-grid-target="dayCol"

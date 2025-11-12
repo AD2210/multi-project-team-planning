@@ -5,7 +5,7 @@
         <div class="mb-2">
             <label class="form-label">Date :</label>
             <input type="date" class="form-control form-control-sm"
-                   data-model="anchor"
+                   data-model="on(change)|anchor"
                    value="{{ comp.anchor == 'today' ? 'now'|date('Y-m-d') : comp.anchor }}">
         </div>
     {% endif %}

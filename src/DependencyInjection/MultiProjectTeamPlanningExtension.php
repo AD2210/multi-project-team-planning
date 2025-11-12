@@ -19,9 +19,7 @@ final class MultiProjectTeamPlanningExtension extends Extension
         $conf = $this->processConfiguration(new Configuration(), $configs);
 
         $loader = new YamlFileLoader($container, new FileLocator(__DIR__.'/../Resources/config'));
-        if (file_exists(__DIR__.'/../Resources/config/services.yaml')) {
-            $loader->load('services.yaml');
-        }
+        $loader->load('services.yaml');
 
         $container->register(PlannerOptions::class)
             ->addArgument($conf)

@@ -17,8 +17,9 @@
                     <span class="input-group-text">Date</span>
                     <input type="date"
                            class="form-control"
-                           data-model="anchor"
-                           value="{{ comp.anchor == 'today' ? 'now'|date('Y-m-d') : comp.anchor }}">
+                           data-model="on(change)|anchor"
+                           value="{{ comp.anchor == 'today' ? 'now'|date('Y-m-d') : comp.anchor }}"
+                    >
                 </div>
             {% endif %}
 
