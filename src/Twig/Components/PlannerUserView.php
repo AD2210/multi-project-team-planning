@@ -93,6 +93,58 @@ final class PlannerUserView
         return $days;
     }
 
+    public function getDaysForMonthView(): array
+    {
+        $tz = new \DateTimeZone($this->opt->tz());
+
+        $anchor = $this->anchor === 'today'
+            ? new \DateTimeImmutable('now', $tz)
+            : new \DateTimeImmutable($this->anchor, $tz);
+
+        // on étend le mois en comptant des semaines complète (début lundi, fin dimanche)
+        $first = $anchor->modify('first day of this month');
+        if ((int) $first->format('N') !== 1) { // Si ce n’est pas lundi
+            $first = $first->modify('last monday');
+        }
+
+        $last = $anchor->modify('last day of this month');
+        if ((int) $last->format('N') !== 7) { // Si ce n’est pas dimanche
+            $last = $last->modify('next sunday');
+        }
+
+        $showWeekends = $this->getUi()['toolbar']['views']['month']['show_weekends'] ?? true;
+
+        $days = [];
+        $current = $first;
+
+        while ($current <= $last) {
+            $dayNum = (int) $current->format('N'); // 6 = samedi, 7 = dimanche
+            if (!$showWeekends && $dayNum >= 6) {
+                $current = $current->modify('+1 day');
+                continue;
+            }
+
+            $days[] = [
+                'date' => $current,
+                'ymd' => $current->format('Y-m-d'),
+                'label' => DateFormatter::formatIcu($current, 'd LLL', $this->opt->locale(), $this->opt->tz()),
+                'dayOfWeek' => $dayNum,
+                'dayOfWeekLabel' => DateFormatter::formatIcu($current, 'EEEE', $this->opt->locale(), $this->opt->tz()),
+                'weekNumber' => (int) $current->format('W'),
+                'isCurrentMonth' => $current->format('Y-m') === $anchor->format('Y-m'),
+            ];
+            $current = $current->modify('+1 day');
+        }
+        return $days;
+    }
+
+    public function getCurrentMonthLabel(): string
+    {
+        $anchor = $this->getAnchorDate();
+        $formatter = new \IntlDateFormatter($this->opt->locale(), \IntlDateFormatter::LONG, \IntlDateFormatter::NONE, $this->opt->tz(), null, 'LLLL');
+        return ucfirst($formatter->format($anchor));
+    }
+
     public function getUi(): array
     {
         return [

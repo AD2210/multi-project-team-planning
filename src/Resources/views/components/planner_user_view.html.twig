@@ -1,6 +1,6 @@
 <div {{ attributes }} class="container-fluid d-flex">
     {% if this.mode == 'user' or this.mode == 'project' %}
-        {% if this.ui.anchor_location == 'sidebar' or this.ui.selector_location == 'sidebar' %}
+        {% if this.ui.toolbar.anchor_location == 'sidebar' or this.ui.toolbar.selector_location == 'sidebar' %}
             {% include '@MultiProjectTeamPlanning/components/user/_sidebar.html.twig' with {
                 ui: this.ui,
                 comp: this
@@ -13,22 +13,32 @@
             comp: this
         } only %}
 
-        {% include '@MultiProjectTeamPlanning/components/user/_grid_header.html.twig' with {
-            days: this.daysForView
-        } only %}
-
-        <div class="mptp-grid-scroll">
-            {% include '@MultiProjectTeamPlanning/components/user/_grid_body.html.twig' with {
-            ui: this.ui,
-            comp: this,
-            days: this.daysForView,
-            grid: this.grid,
-            csrf: this.csrfTokenValue,
-            rangeStart: this.rangeStartYmd,
-            rangeEnd: this.rangeEndYmd
+        {% if this.period == 'month' %}
+            {% include '@MultiProjectTeamPlanning/components/user/_grid_header_month.html.twig' with {
+                days: this.daysForMonthView
             } only %}
-        </div>
+            {% include '@MultiProjectTeamPlanning/components/user/_grid_body_month.html.twig' with {
+                comp: this,
+                days: this.daysForMonthView,
+                grid: this.grid
+            } only %}
+        {% else %}
+            {% include '@MultiProjectTeamPlanning/components/user/_grid_header.html.twig' with {
+                days: this.daysForView
+            } only %}
 
+            <div class="mptp-grid-scroll">
+                {% include '@MultiProjectTeamPlanning/components/user/_grid_body.html.twig' with {
+                ui: this.ui,
+                comp: this,
+                days: this.daysForView,
+                grid: this.grid,
+                csrf: this.csrfTokenValue,
+                rangeStart: this.rangeStartYmd,
+                rangeEnd: this.rangeEndYmd
+                } only %}
+            </div>
+        {% endif %}
         {% include '@MultiProjectTeamPlanning/components/user/_detail_modal.html.twig' %}
     </div>
 </div>

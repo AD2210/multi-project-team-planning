@@ -26,7 +26,13 @@ ad2210_planning:
   toolbar:
     anchor_location: toolbar
     selector_location: toolbar
-    views: { day: true, week: true, workweek: true, month: true }
+    views:
+      day: true
+      week: true
+      workweek: true
+      month:
+        enable: true
+        show_weekends: true
 
   grid:
     work_start: '07:00'
@@ -44,7 +50,13 @@ ad2210_planning:
     global:
       toolbar:
         anchor_location: toolbar
-        views: { month: false, week: true, workweek: true, day: true }
+        views:
+          day: true
+          week: true
+          workweek: true
+          month:
+            enable: false
+            show_weekends: false
       grid:
         minute_step: 60
 
@@ -52,7 +64,13 @@ ad2210_planning:
       toolbar:
         anchor_location: sidebar
         selector_location: sidebar
-        views: { month: true, week: true, workweek: true, day: false }
+        views:
+          day: false
+          week: true
+          workweek: true
+          month:
+            enable: true
+            show_weekends: true
       grid:
         minute_step: 30
 
@@ -60,4 +78,10 @@ ad2210_planning:
       toolbar:
         anchor_location: sidebar
         selector_location: sidebar
-        views: { month: true, week: true, workweek: true, day: false }
+        views:
+          day: false
+          week: true
+          workweek: true
+          month:
+            enable: true
+            show_weekends: true

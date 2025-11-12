@@ -1,0 +1,7 @@
+<div class="mptp-grid-header mptp-grid-month-header d-flex">
+    <div class="week-label" style="width: 40px;"></div>
+    {% set weekDaysCount = ui.toolbar.views.month.show_weekends ? 7 : 5 %}
+    {% for day in days|slice(0,weekDaysCount) %}
+        <div class="flex-fill text-center fw-bold">{{ day.dayOfWeekLabel|title }}</div>
+    {% endfor %}
+</div>

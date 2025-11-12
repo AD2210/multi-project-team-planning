@@ -1,0 +1,20 @@
+{% set weekDaysCount = ui.toolbar.views.month.show_weekends ? 7 : 5 %}
+<div class="mptp-grid mptp-grid-month h-100">
+    {% for index, week in days|batch(weekDaysCount) %}
+        <div class="mptp-grid-row d-flex">
+            <div class="week-label p-1 text-end small fw-bold border-end" style="width: 40px;">
+                {{ days[index*weekDaysCount].weekNumber }}
+            </div>
+            {% for day in week %}
+                <div class="mptp-day-cell border p-1 flex-fill {{ day.isCurrentMonth ? '' : 'bg-light text-muted' }}" style="min-height: 120px;">
+                    <div class="fw-bold small text-center">{{ day.label }}</div>
+                    <ul class="list-unstyled m-0 small">
+                        {% for event in comp.grid[day.ymd] ?? [] %}
+                            <li>{{ event.label }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            {% endfor %}
+        </div>
+    {% endfor %}
+</div>

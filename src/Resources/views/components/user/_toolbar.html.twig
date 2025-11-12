@@ -15,14 +15,16 @@
             {% if tb.anchor_location == 'toolbar' %}
                 <div class="input-group input-group-sm" style="width: 210px;">
                     <span class="input-group-text">Date</span>
-                    <input type="date"
-                           class="form-control"
-                           data-model="on(change)|anchor"
-                           value="{{ comp.anchor == 'today' ? 'now'|date('Y-m-d') : comp.anchor }}"
+                    <input
+                            type="date"
+                            class="form-control"
+                            data-model="on(change)|anchor"
+                            {#                        data-action="change->live#action"#}
+                            {#                        data-live-action-param="setAnchor"#}
                     >
                 </div>
             {% endif %}
-
+            <span class="ms-3 fw-bold text-secondary">{{ comp.currentMonthLabel }}</span>
             <div class="ms-auto d-flex align-items-center gap-2">
                 {# Sélecteur user si mode=user et emplacement=toolbar #}
                 {% if comp.mode == 'user' and tb.selector_location == 'toolbar' %}
@@ -59,7 +61,7 @@
                     <button class="btn btn-sm {{ comp.period == 'workweek' ? 'btn-primary' : 'btn-outline-secondary' }}"
                             data-action="live#action" data-live-action-param="setPeriod" data-live-period-param="workweek">Travail</button>
                 {% endif %}
-                {% if tb.views.month %}
+                {% if tb.views.month.enable %}
                     <button class="btn btn-sm {{ comp.period == 'month' ? 'btn-primary' : 'btn-outline-secondary' }}"
                             data-action="live#action" data-live-action-param="setPeriod" data-live-period-param="month">Mois</button>
                 {% endif %}
