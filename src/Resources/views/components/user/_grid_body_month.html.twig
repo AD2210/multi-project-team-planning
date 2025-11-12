@@ -1,12 +1,19 @@
 {% set weekDaysCount = ui.toolbar.views.month.show_weekends ? 7 : 5 %}
-<div class="mptp-grid mptp-grid-month h-100">
-    {% for index, week in days|batch(weekDaysCount) %}
-        <div class="mptp-grid-row d-flex">
-            <div class="week-label p-1 text-end small fw-bold border-end" style="width: 40px;">
-                {{ days[index*weekDaysCount].weekNumber }}
+{% set heightClass = {
+    4: 'min-vh-20',
+    5: 'min-vh-16',
+    6: 'min-vh-12'
+}[comp.monthWeekCount] %}
+
+<div class="mptp-grid mptp-grid-month">
+    {% for index, week in comp.weeksForMonthView %}
+        <div class="mptp-grid-row d-grid border-bottom {{ heightClass }}"
+             style="grid-template-columns: 40px repeat({{ weekDaysCount }}, 1fr);">
+            <div class="week-label p-1 text-end small fw-bold border-end">
+                {{ comp.daysForMonthView[index * weekDaysCount].weekNumber }}
             </div>
             {% for day in week %}
-                <div class="mptp-day-cell border p-1 flex-fill {{ day.isCurrentMonth ? '' : 'bg-light text-muted' }}" style="min-height: 120px;">
+                <div class="mptp-day-cell border-start p-1 {{ day.isCurrentMonth ? '' : 'bg-light text-muted' }}">
                     <div class="fw-bold small text-center">{{ day.label }}</div>
                     <ul class="list-unstyled m-0 small">
                         {% for event in comp.grid[day.ymd] ?? [] %}

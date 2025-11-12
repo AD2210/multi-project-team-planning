@@ -138,11 +138,34 @@ final class PlannerUserView
         return $days;
     }
 
+    public function getWeeksForMonthView(): array
+    {
+        $days = $this->getDaysForMonthView();
+        $weekDaysCount = $this->getUi()['toolbar']['views']['month']['show_weekends'] ? 7 : 5;
+
+        $weeks = array_chunk($days, $weekDaysCount);
+
+        // Ne garder que les semaines contenant au moins un jour du mois courant
+        return array_filter($weeks, function (array $week) {
+            foreach ($week as $day) {
+                if ($day['isCurrentMonth']) {
+                    return true;
+                }
+            }
+            return false;
+        });
+    }
+
     public function getCurrentMonthLabel(): string
     {
         $anchor = $this->getAnchorDate();
         $formatter = new \IntlDateFormatter($this->opt->locale(), \IntlDateFormatter::LONG, \IntlDateFormatter::NONE, $this->opt->tz(), null, 'LLLL');
         return ucfirst($formatter->format($anchor));
+    }
+
+    public function getMonthWeekCount(): int
+    {
+        return count($this->getWeeksForMonthView());
     }
 
     public function getUi(): array
@@ -209,19 +232,16 @@ final class PlannerUserView
     {
         $tz = new \DateTimeZone($this->opt->tz());
 
-        $ref = $this->anchor === 'today'
+        // Lire l’ancre telle qu’elle sera transmise
+        $current = $this->anchor === 'today'
             ? new \DateTimeImmutable('now', $tz)
-            : \DateTimeImmutable::createFromFormat('Y-m-d', $this->anchor, $tz);
-
-        if (!$ref) {
-            $ref = new \DateTimeImmutable('now', $tz);
-        }
+            : new \DateTimeImmutable($this->anchor, $tz);
 
         return match ($this->period) {
-            'month'     => $ref->modify("$offset month")->format('Y-m-d'),
+            'month'     => $current->modify("{$offset} month")->format('Y-m-d'),
             'week',
-            'workweek'  => $ref->modify("$offset week")->format('Y-m-d'),
-            default     => $ref->modify("$offset day")->format('Y-m-d'),
+            'workweek'  => $current->modify("{$offset} week")->format('Y-m-d'),
+            default     => $current->modify("{$offset} day")->format('Y-m-d'),
         };
     }
 }
