@@ -6,12 +6,14 @@ use Ad2210\MultiProjectTeamPlanning\Options\PlannerOptions;
 use Ad2210\MultiProjectTeamPlanning\Service\DateFormatter;
 use Ad2210\MultiProjectTeamPlanning\Service\TimeGridBuilder;
 use Ad2210\MultiProjectTeamPlanning\Service\ViewWindow;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\UX\LiveComponent\Attribute\AsLiveComponent;
 use Symfony\UX\LiveComponent\Attribute\LiveAction;
 use Symfony\UX\LiveComponent\Attribute\LiveArg;
 use Symfony\UX\LiveComponent\Attribute\LiveProp;
 use Symfony\UX\LiveComponent\DefaultActionTrait;
 use Symfony\Component\Security\Csrf\CsrfTokenManagerInterface;
+use Symfony\UX\LiveComponent\Metadata\UrlMapping;
 
 use DateTimeImmutable;
 use DateTimeZone;
@@ -31,19 +33,19 @@ final class PlannerUserView
         private ?CsrfTokenManagerInterface $csrf = null,
     ) {}
 
-    #[LiveProp(writable: true)]
+    #[LiveProp(writable: true, url: true)]
     public string $mode = 'user'; // 'user' | 'project'
 
-    #[LiveProp(writable: true)]
+    #[LiveProp(writable: true, url: true)]
     public ?int $userId = null;
 
-    #[LiveProp(writable: true)]
+    #[LiveProp(writable: true, url: new UrlMapping(as: 'p'))]
     public ?int $projectId = null;
 
-    #[LiveProp(writable: true)]
+    #[LiveProp(writable: true, url: true)]
     public string $anchor = 'today'; // 'YYYY-MM-DD' | 'today'
 
-    #[LiveProp(writable: true)]
+    #[LiveProp(writable: true, url: true)]
     public string $period = 'week'; // day|week|workweek|month
 
     public function getOptions(): PlannerOptions { return $this->opt; }
@@ -51,9 +53,7 @@ final class PlannerUserView
     public function getAnchorDate(): DateTimeImmutable
     {
         $tz = new DateTimeZone($this->opt->tz());
-        return $this->anchor === 'today'
-            ? new DateTimeImmutable('today', $tz)
-            : new DateTimeImmutable($this->anchor, $tz);
+        return new DateTimeImmutable($this->anchor, $tz);
     }
 
     /** @return array{start:\DateTimeImmutable,end:\DateTimeImmutable,days:\DateTimeImmutable[]} */
@@ -159,7 +159,7 @@ final class PlannerUserView
     public function getCurrentMonthLabel(): string
     {
         $anchor = $this->getAnchorDate();
-        $formatter = new \IntlDateFormatter($this->opt->locale(), \IntlDateFormatter::LONG, \IntlDateFormatter::NONE, $this->opt->tz(), null, 'LLLL');
+        $formatter = new \IntlDateFormatter($this->opt->locale(), \IntlDateFormatter::LONG, \IntlDateFormatter::NONE, $this->opt->tz(), null, 'LLLL yyyy');
         return ucfirst($formatter->format($anchor));
     }
 
@@ -213,7 +213,6 @@ final class PlannerUserView
     #[LiveAction]
     public function setPeriod(#[LiveArg] string $period): void {
         $this->period = $period;
-        $this->anchor = 'today'; // reset anchor, voir si on le conserve
     }
 
     public function getRangeStartYmd(): string
@@ -230,18 +229,20 @@ final class PlannerUserView
 
     private function shiftAnchor(int $offset): string
     {
-        $tz = new \DateTimeZone($this->opt->tz());
-
-        // Lire l’ancre telle qu’elle sera transmise
-        $current = $this->anchor === 'today'
+        $tz       = new \DateTimeZone($this->opt->tz());
+        // Prendre la date de référence depuis l’état actuel du composant
+        $baseDate = ($this->anchor === 'today')
             ? new \DateTimeImmutable('now', $tz)
             : new \DateTimeImmutable($this->anchor, $tz);
-
-        return match ($this->period) {
-            'month'     => $current->modify("{$offset} month")->format('Y-m-d'),
+        // Appliquer le décalage en fonction de la période
+        $target = match ($this->period) {
+            'month'      => $baseDate->modify('first day of this month')
+                ->modify("$offset month"),
             'week',
-            'workweek'  => $current->modify("{$offset} week")->format('Y-m-d'),
-            default     => $current->modify("{$offset} day")->format('Y-m-d'),
+            'workweek'   => $baseDate->modify('monday this week')
+                ->modify("$offset week"),
+            default      => $baseDate->modify("$offset day"),
         };
+        return $target->format('Y-m-d');
     }
 }
